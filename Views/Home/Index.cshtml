@@ -1,0 +1,345 @@
+﻿
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+	<meta charset="utf-8" />
+	<title>@ViewData["Title"] - Customer Management System</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+</head>
+<body>
+	<div class="container" style="margin-top:50px; max-width: 90%; padding: 0;">
+		<div class="d-flex justify-content-center">
+			<div>
+				<table class="table table-bordered text-center" style="width: 100%">
+					<thead class="thead-primary">
+						<tr class='bg-primary'>
+							<th scope="col" class="text-light">#</th>
+							<th scope="col" class="text-light">Id</th>
+							<th scope="col" class="text-light">CompanyName</th>
+							<th scope="col" class="text-light">Referance</th>
+							<th scope="col" class="text-light">Code</th>
+							<th scope="col" class="text-light">ContactName</th>
+							<th scope="col" class="text-light">Mail</th>
+							<th scope="col" class="text-light">Tel</th>
+							<th scope="col" class="text-light">ServiceArea</th>
+							<th scope="col" class="text-light">Services</th>
+							<th scope="col" class="text-light">Actions</th>
+						</tr>
+					</thead>
+					<tbody id="dataTable">
+						<!-- Dynamic rows will be inserted here -->
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<button type="button" id="add" class="btn btn-outline-primary">Add</button>
+
+	<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Informations</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<input type="text" id="compName" class="form-control" placeholder="CompanyName girin">
+					<input type="number" id="referance" class="form-control" placeholder="Referance girin">
+					<input type="text" id="code" class="form-control" placeholder="Code girin">
+					<input type="text" id="contactName" class="form-control" placeholder="ContactName girin">
+					<input type="email" id="mail" class="form-control" placeholder="Mail girin">
+					<input type="number" id="tel" class="form-control" placeholder="Tel girin">
+					<input type="text" id="serviceArea" class="form-control" placeholder="ServiceArea girin">
+					<div class="input-group">
+						<select class="custom-select" id="serviceSelected" style="min-width: 150px;">
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" id="close" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+					<button type="button" id="submit" class="btn btn-primary" data-bs-dismiss="modal">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Delete Customer</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div>Are You Sure to Delete the Customer!</div>
+					<div id="customerId" style="display: none;"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" id="close" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+					<button type="button" id="deleteb" class="btn btn-danger">Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Edit Modal -->
+	<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Edit</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<input type="text" id="compNameE" class="form-control">
+					<input type="number" id="referanceE" class="form-control">
+					<input type="text" id="codeE" class="form-control">
+					<input type="text" id="contactNameE" class="form-control">
+					<input type="email" id="mailE" class="form-control">
+					<input type="number" id="telE" class="form-control">
+					<input type="text" id="serviceAreaE" class="form-control">
+					<div class="input-group">
+						<select class="custom-select" id="serviceModalSelect" style="min-width: 150px;">
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" id="close" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+					<button type="button" id="editb" class="btn btn-warning">Edit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script defer>
+			//defer özelliği sayfa yüklendikten sonra çalışmayı sağlar.
+
+		$(document).ready(function (){
+			LoadCustomers();
+		})
+
+		function DeleteCustomer(customerId){
+
+					if (!customerId) {
+						alert("Customer ID is missing!");
+						return;
+					}
+
+					// İlk AJAX çağrısı: Etiketleri getir
+					$.ajax({
+							url: '/Home/Delete',
+							type: 'POST',
+							data: {
+								id: customerId
+							},
+						}).done(function (deleteResponse) {
+							if (deleteResponse.success) {
+								alert("Customer and related labels deleted successfully!");
+								location.reload(); // Sayfayı yenile
+							} else {
+								alert(deleteResponse.message);
+							}
+						}).fail(function (xhr) {
+							alert("An error occurred: " + xhr.responseText);
+						});
+
+					// Modalı kapat
+					$("#deleteModal").modal("hide");
+		}
+
+		$("#add").on("click", function () {
+				$.ajax({
+					url: "/Service/GetList",
+					type: "GET",
+					dataType: "json",
+					success: function(data) {
+						var serviceSelect = $("#serviceSelected");
+						serviceSelect.empty();
+						$.each(data, function(index, service) {
+							serviceSelect.append('<option value="' + service.id + '" id="serviceSelected">' + service.description + '</option>');
+						});
+					}
+				})
+
+				$("#addModal").modal("show");
+			});
+
+		$("#submit").click(function () {
+			
+				var customerData = {
+				Id: $('#id').val(),
+				CompanyName: $('#compName').val(),
+				Referance: $('#referance').val(),
+				Code: $('#code').val(),
+				ContactName: $('#contactName').val(),
+				Mail: $('#mail').val(),
+				Tel: $('#tel').val(),
+				ServiceArea: $('#serviceArea').val(),
+				serviceId: $('#serviceSelected').val(),
+			};
+
+			$.ajax({
+				url: "/Home/SubmitAction",
+				type: "POST",
+				dataType: "json",
+				data: {
+					customer:customerData,
+				},
+				success: function (element) {
+					if (element.success) {
+						alert('Succeded');
+					}
+					location.reload();
+
+				},
+				error: function (xhr, status, error) {
+					console.error("Error: " + error);
+					alert('Something went wrong');
+				}
+			});
+		});
+
+		function editCustomer(id) {
+			// Open the modal for editing
+			$('#editModal').modal('show');
+			$('#customerId').data('id', id);
+			console.log(id);
+			// Get the services
+			$.ajax({
+				url: "/Service/GetList",
+				type: "GET",
+				dataType: "json",
+				success: function (data) {
+					var serviceSelect = $("#serviceModalSelect");
+					serviceSelect.empty();
+					$.each(data, function (index, service) {
+						serviceSelect.append('<option value="' + service.id + '">' + service.description + '</option>');
+					});
+				},
+				error: function (xhr, status, error) {
+					console.error("Servis bilgileri alınamadı: " + error);
+				}
+			});
+
+			// Get the labels
+
+
+			// Get the customer details
+			$.ajax({
+				url: '/Home/GetCustomer',
+				type: 'GET',
+				data: { id: id },
+				dataType: 'json',
+				success: function (data) {
+					$('#compNameE').val(data.companyName);
+					$('#referanceE').val(data.referance);
+					$('#codeE').val(data.code || '');
+					$('#contactNameE').val(data.contactName);
+					$('#mailE').val(data.mail);
+					$('#telE').val(data.tel);
+					$('#serviceAreaE').val(data.serviceArea);
+					$('#serviceModalSelect').val(data.serviceId);
+				},
+				error: function (xhr, status, error) {
+					console.error("Müşteri bilgileri alınamadı: " + error);
+				}
+			});
+
+			$("#editb").click(function(){
+				updateCustomer(id);
+			});
+			}
+			
+			function updateCustomer(id){
+				const updatedData = {
+					Id: id,
+					CompanyName: $('#compNameE').val(),
+					Referance: $('#referanceE').val(),
+					Code: $('#codeE').val() || 'DEFAULT_CODE',
+					ContactName: $('#contactNameE').val(),
+					Mail: $('#mailE').val(),
+					Tel: $('#telE').val(),
+					ServiceArea: $('#serviceAreaE').val(),
+					serviceId: $('#serviceModalSelect').val()
+				};
+
+				// Validation
+				if (!updatedData.Code) {
+					alert('Kod alanı boş olamaz.');
+					return;
+				}
+
+				// Update the customer data
+				$.ajax({
+					url: '/Home/UpdateCustomer',
+					type: 'POST',
+					data: updatedData,
+					success: function () {
+						alert('Müşteri başarıyla güncellendi!');
+						$('#editModal').modal('hide');
+						location.reload();
+					},
+					error: function (xhr, status, error) {
+						alert('Güncelleme sırasında hata oluştu.');
+						console.error("Hata Detayı:", error);
+					}
+				});
+			}
+			// Handle the edit button click
+		function LoadCustomers() {
+			$.ajax({
+				url: "/Home/GetList",
+				type: "GET",
+				success: function (data) {
+					if (!data || !data.customers) {
+						alert("Invalid data received");
+						return;
+					}
+
+					var tableBody = $("#dataTable");
+					tableBody.empty();
+
+					$.each(data.customers, function (index, customer) {
+
+						var row = "<tr>" +
+							"<td>" + (index + 1) + "</td>" +
+							"<td>" + customer.id + "</td>" +
+							"<td>" + customer.companyName + "</td>" +
+							"<td>" + customer.referance + "</td>" +
+							"<td>" + customer.code + "</td>" +
+							"<td>" + customer.contactName + "</td>" +
+							"<td>" + customer.mail + "</td>" +
+							"<td>" + customer.tel + "</td>" +
+							"<td>" + customer.serviceArea + "</td>" +
+							"<td>" + customer.serviceId + "</td>" +
+							"<td>" +
+							'<div class="btn-group" role="group">' +
+							'<button onclick="DeleteCustomer('+customer.id+')" type="button" class="btn btn-outline-danger me-2" ' + customer.id + '" style="width:70px;">Delete</button>' +
+							'<button onclick="editCustomer('+customer.id+')" type="button" class="btn btn-outline-warning" ' + customer.id + '" style="width:70px;">Edit</button>' +
+							'</div>' +
+							"</td>" +
+							"</tr>";
+
+						tableBody.append(row);
+					});
+				},
+				error: function () {
+					alert("Something went wrong!!");
+				}
+			});
+		}
+		
+	</script>
+
+	<footer class="footer bg-light text-center py-3">
+		<div class="container">
+			<span class="text-muted">&copy; @DateTime.Now.Year - Customer Management System</span>
+		</div>
+	</footer>
+
+</body>
+</html>

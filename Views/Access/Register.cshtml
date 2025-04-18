@@ -1,0 +1,109 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - ProductsList</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="~/css/login.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/CustomerManagementSystem.styles.css" asp-append-version="true" />
+    <link href="~/lib/font-awesome/all.min.css" rel="stylesheet" />
+    <script src="~/lib/font-awesome/all.min.js"></script>
+</head>
+
+<body>
+    <div class="wrapper">
+        <form id="registerForm">
+            <h1>Register</h1>
+
+            <div id="errorMessages" class="alert alert-danger d-none"></div>
+
+            <div class="input-box">
+                <input type="text" id="userName" name="Name" placeholder="Name" required />
+            </div>
+
+            <div class="input-box">
+                <input type="text" id="surName" name="SurName" placeholder="Surname" required />
+            </div>
+
+            <div class="input-box">
+                <input type="email" id="userEmail" name="Email" placeholder="Email" required />
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="userPassword" name="Password" placeholder="Password" required />
+            </div>
+
+            <div class="input-box">
+                <input type="text" id="userAddress" name="Address" placeholder="Address" required />
+            </div>
+
+            <div>
+                <p style="color:brown">
+                    Pick your user type:
+                    <label style="color:beige">
+                        <input type="radio" name="UserTypeId" value="1" /> Admin
+                    </label>
+                    <label style="color:beige">
+                        <input type="radio" name="UserTypeId" value="2" /> User
+                    </label>
+                </p>
+            </div>
+
+            <button type="submit" class="btn">Sign up</button>
+
+            <div class="register-link">
+                <p>Have you an account? <a asp-area="" asp-controller="Access" asp-action="Login">Login</a></p>
+            </div>
+
+            <div>
+
+            </div>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+     $(function () {
+        $("#registerForm").on("submit", function (e) {
+            e.preventDefault();
+
+            var formData = {
+                Name: $("#userName").val(),
+                SurName: $("#surName").val(),
+                Email: $("#userEmail").val(),
+                Password: $("#userPassword").val(),
+                Adress: $("#userAddress").val(),
+                UserTypeId: $("input[name='UserTypeId']:checked").val()
+            };
+
+            $.ajax({
+                url: '/Access/SignUp',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    // Başarı mesajı
+                    if (data.success) {
+                        window.location.href = "/Access/Login"; // örnek yönlendirme
+                    } else {
+                        // Hata mesajını div içinde göster
+                            $("#errorMessages").html(`<p>${data.message}</p><i class="fa-solid fa-triangle-exclamation"></i>`).removeClass("d-none");
+                    }
+                },
+                error: function (xhr) {
+                    // Hata durumunda genel mesaj
+                    let errorHtml = "<p>Bir hata oluştu.</p>";
+                    $("#errorMessages").html(errorHtml).removeClass("d-none");
+                }
+            });
+        });
+    });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+﻿@{
+    ViewData["Title"] = "AddProduct";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Products</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+            margin: 5px;
+        }
+
+        .right-preview-container {
+            padding: 10px;
+            color:dodgerblue;
+        }
+
+        .carousel-control-prev,
+        .carousel-control-next {
+            display: none;
+        }
+
+
+        #uploadedImages img {
+            width: 100%;
+            margin: 0 auto;
+            display: block;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card p-4 shadow-sm">
+                    <div class="form-group">
+                        <input type="text" id="explanation" class="form-control" placeholder="Explanation" />
+                    </div>
+                    <div class="form-group">
+                        <input id="Up_document" type="file" name="file" class="form-control" multiple />
+                    </div>
+                    <div class="form-group">
+                        <select class="form-control" id="categorySelect">
+                            <option disabled selected value="">Select a Category</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="description" class="form-control" placeholder="Description" />
+                    </div>
+                    <div class="form-check mb-2">
+                        <input id="breakibility" type="radio" class="form-check-input" />
+                        <label class="form-check-label" for="breakibility">Breakability</label>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            <input id="width" type="text" class="form-control" placeholder="Width" />
+                        </div>
+                        <div class="col">
+                            <input id="height" type="text" class="form-control" placeholder="Height" />
+                        </div>
+                    </div>
+                    <div class="form-group mt-2">
+                        <input id="price" type="text" class="form-control" placeholder="Price" />
+                    </div>
+                    <button class="btn btn-success w-100" id="addCard">
+                        <i class="fa-solid fa-file-arrow-up"></i> Upload
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="right-preview-container" id="previewArea">
+                    <h6>Uploaded Images</h6>
+                    <div id="carouselExampleFade" class="carousel slide carousel-fade" data-bs-ride="carousel" style="max-width: 100%; border: 1px solid #ccc; border-radius: 10px;">
+                        <div id="uploadedImages" class="carousel-inner">
+                            <!-- JS ile doldurulacak -->
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var clickCount = 0;
+            $("#breakibility").on("click", function () {
+                clickCount++;
+                if (clickCount === 2) {
+                    $(this).prop("checked", false);
+                    clickCount = 0;
+                }
+            });
+
+            // Kategorileri çek
+            $.ajax({
+                url: '/Pcategories/GetCategoryByIds',
+                type: 'GET',
+                success: function (data) {
+                    let select = $('#categorySelect');
+                    select.empty().append('<option disabled selected value="">Select a Category</option>');
+                    $.each(data, function (index, item) {
+                        select.append(`<option value="${item.id}">${item.categories}</option>`);
+                    });
+                },
+                error: function () {
+                    alert('Kategoriler yüklenemedi.');
+                }
+            });
+
+        $("#Up_document").on('change', function () {
+            var image_holder = $('#uploadedImages');
+            image_holder.empty();
+
+            var files = $(this)[0].files;
+
+            if (typeof (FileReader) !== "undefined") {
+                if (files.length > 0) {
+                    // Okları göster
+                    $(".carousel-control-prev, .carousel-control-next").show();
+
+                    for (let i = 0; i < files.length; i++) {
+                        let file = files[i];
+                        let reader = new FileReader();
+
+                        reader.onload = function (e) {
+                            const isActive = i === 0 ? 'active' : '';
+                            const $carouselItem = $(`
+                                <div class="carousel-item ${isActive}">
+                                    <img src="${e.target.result}" class="d-block w-100 rounded" alt="...">
+                                </div>
+                            `);
+                            image_holder.append($carouselItem);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                } else {
+                    // Dosya yoksa okları gizle
+                    $(".carousel-control-prev, .carousel-control-next").hide();
+                }
+            } else {
+                alert("Tarayıcınız FileReader'ı desteklemiyor.");
+            }
+        });
+
+
+            $("#addCard").on("click", function () {
+                var formData = new FormData();
+                var files = $("#Up_document")[0].files;
+                if (files.length === 0) {
+                    alert("Lütfen en az bir dosya seçin.");
+                    return;
+                }
+                for (var i = 0; i < files.length; i++) {
+                    formData.append("formFiles", files[i]);
+                }
+                var datas = {
+                    explanation: $("#explanation").val(),
+                    description: $("#description").val(),
+                    categoryId: $("#categorySelect").val(),
+                    breakibility: $("#breakibility").prop("checked"),
+                    price: $("#price").val(),
+                    width: $("#width").val(),
+                    height: $("#height").val()
+                };
+
+                $.ajax({
+                    url: "/Product/AddProduct",
+                    type: "POST",
+                    data: {
+                        product: datas,
+                        categoryid: $('#categorySelect').val()
+                    },
+                    success: function (response) {
+                        if (response.id) {
+                            formData.append("productId", response.id);
+                            $.ajax({
+                                url: "/Product/Create",
+                                type: "POST",
+                                data: formData,
+                                processData: false,
+                                contentType: false,
+                                success: function (uploadResponse) {
+                                    const imageContainer = $('#uploadedImages');
+                                    imageContainer.empty();
+                                    for (let i = 0; i < Math.min(files.length, 3); i++) {
+                                        const reader = new FileReader();
+                                        reader.onload = function (e) {
+                                            imageContainer.append(`<img src="${e.target.result}" class="image-preview" />`);
+                                        };
+                                        reader.readAsDataURL(files[i]);
+                                    }
+                                    alert("Dosya başarıyla yüklendi.");
+                                },
+                                error: function (xhr) {
+                                    alert("Dosya yükleme sırasında hata oluştu: " + xhr.statusText);
+                                }
+                            });
+                        } else {
+                            alert("Ürün ID alınırken bir hata oluştu.");
+                        }
+                    },
+                    error: function (xhr) {
+                        alert("Ürün eklenirken bir hata oluştu.");
+                    }
+                });
+            });
+        });
+    </script>
+
+    <footer class="footer bg-light text-center py-3 mt-4">
+        <div class="container">
+            <span class="text-muted">&copy; @DateTime.Now.Year - Customer Management System</span>
+        </div>
+    </footer>
+</body>
+</html>

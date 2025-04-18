@@ -1,0 +1,76 @@
+﻿@model CustomerManagementSystem.DB.User;
+@{
+    Layout = null;
+    ViewData["Title"] = "login";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - ProductsList</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="~/css/login.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/CustomerManagementSystem.styles.css" asp-append-version="true" />
+    <link href="~/lib/font-awesome/all.min.css" rel="stylesheet" />
+    <script src="~/lib/font-awesome/all.min.js"></script>
+</head>
+
+<body>
+    <div class="wrapper">
+        <form id="loginForm">
+            <h1>Login</h1>
+            <div class="input-box">
+                <input type="email" placeholder="Email" asp-for="Email" required />
+            </div>
+            <div class="input-box">
+                <input type="password" placeholder="Password" asp-for="Password" required />             
+            </div>
+
+            <div class="remember-forgot">
+                <label><input type="checkbox"> Remember Me!</label>
+                <a href="#">Forgot Password?</a>
+            </div>
+
+            <button id="login" type="submit" class="btn">Login</button>
+
+            <div class="register-link">
+                <p>Don't have an account? <a asp-area="" asp-controller="Access" asp-action="Register">Register</a></p>
+            </div>
+        </form>
+        <div id="resultArea"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#login').click(function (e) {
+                e.preventDefault(); // Formun submit olmasını engelle
+
+                $.ajax({
+                    url: '/Access/Login',
+                    type: 'POST',
+                    data: $('#loginForm').serialize(),
+                    success: function (result) {
+                        console.log(result); // Konsola JSON verisi yazdırılır
+
+                        if (result.success) {
+                            // Yönlendirme işlemi, sayfayı yenilemeden yapılır
+                            window.location.href = result.redirectUrl;
+                        } else {
+                            // Hata mesajı
+                            alert(result.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // AJAX hatası
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+﻿@{
+    var products = ViewBag.Products as List<CustomerManagementSystem.DB.Product>;
+}
+
+@{
+    ViewData["Title"] = "ProductList";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - ProductsList</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="d-flex me-auto mt-3">
+        <a id="AddnewProduct" class="btn btn-success" asp-controller="Product" asp-action="Index"><i class="fa-solid fa-plus"></i>Add</a>
+    </div>
+
+    <div class="d-flex align-items-center mt-3">
+        <div class="btn-group me-3" role="group" id="buttonContainer">
+            <!-- Dinamik butonlar buraya eklenecek -->
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" id="highFilter">
+                <i class="fa-solid fa-arrow-up"></i> Up $
+            </button>
+            <button class="btn btn-outline-secondary" id="lowFilter">
+                <i class="fa-solid fa-arrow-down"></i> Down $
+            </button>
+        </div>
+    </div>
+
+
+    <div class="container mt-5">
+        <div id="productContainer" class="row g-3">
+            <!-- Ürünler buraya gelecek -->
+        </div>
+    </div>
+
+
+
+    <!--Ana Modal-->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header d-flex justify-content-between align-items-center bg-primary text-white">
+                    <div class="d-flex align-items-center w-100">
+                        <h5 class="modal-title mb-0 me-1" id="modalTitle"></h5>
+                        <h5 id="modalDescription" class="text-warning mb-0"></h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body text-center bg-light">
+                    <img id="modalImage" src="" class="img-fluid mb-3 img-thumbnail" style="max-height: 200px; object-fit: cover;">
+                    <h5 id="modalBreakibility" class="text-danger"></h5>
+                    <h5 id="modalCategoryid" class="text-warning"></h5>
+                    <h5 id="modalWidth" class="text-success"></h5>
+                    <h5 id="modalHeight" class="text-success"></h5>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer d-flex justify-content-between align-items-center bg-primary text-white">
+                    <h5 id="modalPrice" class="text-light mb-0"></h5>
+                    <span id="productId" data-id=""></span>
+                    <div class="btn-group" role="group" aria-label="Basic outlined example">
+                        <button id="modalEditB" type="button" class="btn btn-warning"><i class="fa-solid fa-wrench me-1"></i>Edit</button>
+                        <button id="modalDeleteB" type="button" class="btn btn-danger"><i class="fa-solid fa-trash-can me-1"></i>Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--EditModal -->
+    <div id="editModal" class="modal fade" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog ">
+            <div class="modal-content">
+                <div class="modal-header  bg-warning">
+                    <h5 class="modal-title"><i class="fa-solid fa-wrench me-1"></i>Edit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-12 col-md-6">                        
+                                <div class="mb-3">
+                                    <input id="explanationE" type="text" class="form-control" onfocus="this.value=''">
+                                </div>
+                                <div class="mb-3">
+                                    <input id="descriptionE" type="text" class="form-control" onfocus="this.value=''">
+                                </div>
+                                <div class="mb-3">
+                                    <span class="align-items-start me-2">Breakability</span>
+                                    <input id="breakibilityE" type="radio" name="breakibility" class="form-check-input ms-auto">
+                                </div>
+
+								<div class="mb-3">
+                                    <input id="widthE" type="text" class="form-control" onfocus="this.value=''">
+								</div>
+								<div class="mb-3">
+                                    <input id="heightE" type="text" class="form-control" onfocus="this.value=''">
+								</div>
+								<div class="mb-3">
+                                    <input id="priceE" type="text" class="form-control" onfocus="this.value=''">
+								</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer  bg-warning">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                    <button id="submitB" type="button" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+
+         document.addEventListener("DOMContentLoaded", function () {
+            const breakabilityRadio = document.getElementById("breakibilityE");
+
+            breakabilityRadio.addEventListener("dblclick", function () {
+                this.checked = !this.checked; // Çift tıklayınca seçimi kaldırır veya ekler
+            });
+        });
+
+        $(document).ready(function () {
+            // Kategori butonlarını yükleme
+            $.ajax({
+                url: "/Pcategories/GetCategoryByIds",
+                type: "GET",
+                dataType: "json",
+                success: function (catResponse) {
+                    var buttonContainer = $("#buttonContainer");
+                    buttonContainer.empty();
+
+                    catResponse.forEach(function (category) {
+                        console.log(category)
+                        var button = $("<button>")
+                            .addClass("btn btn-outline-primary filter-btn")
+                            .attr("data-id", category.id)
+                            .text(category.categories)
+                            .on("click", function () {
+                                $(".filter-btn").removeClass("btn-primary").addClass("btn-outline-primary");
+                                $(this).on("click", function(){
+                                    removeClass("btn-outline-primary").addClass("btn-primary");
+                                })
+                            })
+                            .appendTo("#buttonContainer");
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX hatası:", error);
+                    $("#buttonContainer").text("Kategoriler yüklenemedi");
+                }
+            });
+
+        });
+
+        $(document).ready(function () {
+        let selectedCategoryId = null;
+        let currentSortOrder = "asc";
+
+         function loadProducts() {
+             $.ajax({
+                 url: "/ProductList/GetAllProducts",
+                 type: "GET",
+                 data: { categoryId: selectedCategoryId },
+                 dataType: "json",
+                 success: function (response) {
+                     if (!response.success) {
+                         $("#productContainer").html(`<p class="text-danger text-center">${response.message}</p>`);
+                         return;
+                     }
+
+                     let data = response.data;
+
+                     if (selectedCategoryId) {
+                         data = data.filter(item => item.categoryId == selectedCategoryId);
+                     }
+
+                     // **Fiyat sıralaması**
+                     data.sort((a, b) => {
+                         return currentSortOrder === "asc" ? a.price - b.price : b.price - a.price;
+                     });
+
+                     let productHtml = "";
+                     if (data && data.length > 0) {
+                         data.forEach(item => {
+                             let firstImage = item.pimages?.length > 0 ? item.pimages[0] : "/images/no-image.png";
+
+                             productHtml += `
+                                 <div class="col-md-4 mb-4">
+                                     <div class="card" style="max-width: 18rem; max-height: 400px; overflow: hidden;">
+                                         <div class="d-flex justify-content-center">
+                                             <img src="${firstImage}" class="img-fluid mb-3 img-thumbnail" style="max-height: 200px; object-fit: cover;">
+                                         </div>
+                                         <div class="card-body">
+                                             <h5 class="card-title text-truncate" style="max-width: 100%;">
+                                                 <span>Brand:</span> ${item.explanation}
+                                             </h5>
+                                             <h6 class="card-subtitle mb-2 text-muted">
+                                                 <span>Description:</span> ${item.description}
+                                             </h6>
+                                             <h5 class="card-text text-truncate" style="max-height: 100px; overflow: hidden;">
+                                                 <span>Price:</span> ${item.price}$
+                                                 <button type="button" class="btn btn-outline-primary float-end showModalBtn"
+                                                         data-bs-toggle="modal"
+                                                         data-bs-target="#productModal"
+                                                         data-id="${item.id}"
+                                                         data-title="${item.explanation}"
+                                                         data-description="${item.description}"
+                                                         data-price="${item.price}"
+                                                         data-categoryid="${item.categoryId}"
+                                                         data-width="${item.width}"
+                                                         data-height="${item.height}"
+                                                         data-image="${firstImage}">
+                                                     SH<i class="fa-solid fa-eye"></i>W
+                                                 </button>
+                                             </h5>
+                                         </div>
+                                     </div>
+                                 </div>`;
+                         });
+                     } else {
+                         productHtml = `<p class="text-center">No products available.</p>`;
+                     }
+
+                     $("#productContainer").html(productHtml);
+                 },
+                 error: function () {
+                     $("#productContainer").html(`<p class="text-danger text-center">Failed to load products.</p>`);
+                 }
+             });
+         }
+
+         // Sayfa yüklendiğinde ürünleri varsayılan olarak yükle
+         loadProducts();
+
+         // **Sıralama butonları için event listener**
+         $("#highFilter").click(function () {
+             currentSortOrder = "desc";
+             loadProducts();
+         });
+
+         $("#lowFilter").click(function () {
+             currentSortOrder = "asc";
+             loadProducts();
+         });
+            // Filtre butonlarına tıklanınca ürünleri güncelle
+            $(document).on("click", ".filter-btn", function () {
+                let clickedId= $(this).attr("data-id");
+                if(selectedCategoryId == clickedId)
+                {
+                    selectedCategoryId= null;
+                    $(".filter.btn").removeClass("btn-priamry").addClass("btn-outline-primary");
+                }
+                else{
+                    selectedCategoryId = clickedId;
+                    $(this).removeClass("btn-outline").addClass("btn-primary");
+                }
+                loadProducts();
+            });
+        });
+
+
+            document.addEventListener("DOMContentLoaded", function () {
+            document.addEventListener("click", function (event) {
+                let button = event.target.closest(".showModalBtn"); // En yakın `.showModalBtn`'i bul
+                if (button) {
+                    let id = button.getAttribute("data-id");
+                    let title = button.getAttribute("data-title");
+                    let description = button.getAttribute("data-description");
+                    let price = button.getAttribute("data-price");
+                    let image = button.getAttribute("data-image");
+                    let breakibility = button.getAttribute("data-breakibility") === 'true';
+                    let categoryid = button.getAttribute("data-categoryid");
+                    let width = button.getAttribute("data-width");
+                    let height = button.getAttribute("data-height");
+
+                    document.getElementById("productId").setAttribute('data-id', id);
+                    document.getElementById("modalTitle").innerText = title;
+                    document.getElementById("modalDescription").innerText = description;
+                    document.getElementById("modalPrice").innerText = `Price: $${price}`;
+                    document.getElementById("modalImage").setAttribute("src", image);
+                    document.getElementById("modalBreakibility").innerText = breakibility ? "Breakibility: Yes" : "Breakibility: No";
+                    document.getElementById("modalCategoryid").innerText = `Category: ${categoryid}`;
+                    document.getElementById("modalWidth").innerText = `Width: ${width}m`;
+                    document.getElementById("modalHeight").innerText = `Height: ${height}m`;
+                }
+            });
+        });
+
+         $("#modalDeleteB").click(function() {
+             var itemId = document.getElementById("productId").getAttribute('data-id');
+
+            $.ajax({
+                url: '/ProductList/Delete/'+itemId,
+                type: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        $('#productModal').modal('hide');
+                        alert("Product deleted successfully!");
+                        location.reload();
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert("An error occurred: " + error);
+                }
+            });
+            location.reload();
+        });
+
+         $("#modalEditB").click(function(){
+            var itemId = $("#productId").attr("data-id");
+
+            if (!itemId) {
+                console.error("Hata: Ürün ID'si alınamadı.");
+                return;
+            }
+
+            $("#editModal").modal("show");
+
+            Get(itemId);
+
+            $('#submitB').click(function(){
+                Upload(itemId);
+            })
+            
+        });
+
+             function Get(itemId) {
+                $.ajax({
+                    url: '/ProductList/GetProduct',
+                    type: 'GET',
+                    data: {itemId},
+                    success: function (data) {   
+                        $('#explanationE').val("Explanation="+data.explanation);
+                        $('#descriptionE').val("Description="+data.description);
+                        $('#widthE').val("Width="+data.width);
+                        $('#heightE').val("Height="+data.height);
+                        $('#priceE').val("Price="+data.price);
+                        $('#breakibilityE').val("Breakibility="+data.breakibility);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Ürün bilgileri alınamadı: " + error + itemId);
+                    }
+                });
+            }
+
+            function Upload(itemId){
+                const products ={
+                Id:itemId,
+                price:$('#priceE').val(),
+                categoryId: $('#categoryE').val(),
+                Breakibility: $("#breakibilityE").prop("checked"),
+                width: $('#widthE').val(),
+                height: $('#heightE').val(),
+                description: $("#descriptionE").val(),
+                explanation: $('#explanationE').val()
+                };
+                $.ajax({
+                    url: '/ProductList/UpdateProduct',
+                    type: 'POST',
+                    data: products,
+                    success: function () {
+                        alert('Müşteri başarıyla güncellendi!');
+                        $('#editModal').modal('hide');
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Güncelleme sırasında hata oluştu.');
+                        console.error("Hata Detayı:", error);
+                    }
+                });
+            };
+
+            
+    </script>
+
+
+    <footer class="footer bg-light text-center py-3">
+        <div class="container">
+            <span class="text-muted">&copy; @DateTime.Now.Year - Customer Management System</span>
+        </div>
+    </footer>
+</body>
+</html>
