@@ -21,5 +21,7 @@ public partial class Product
 
     public double? Height { get; set; }
 
+    public int? Stock { get; set; }
+
     public int? CreaterUserId { get; set; }
 }

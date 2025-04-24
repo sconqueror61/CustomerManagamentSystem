@@ -12,12 +12,11 @@
     <title>@ViewData["Title"] - ProductsList</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Bootstrap & FontAwesome -->
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+	<link href="~/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CustomerManagementSystem.styles.css" asp-append-version="true" />
-    <link href="~/lib/font-awesome/all.min.css" rel="stylesheet" />
-    <script src="~/lib/font-awesome/all.min.js"></script>
+	<link href="~/font-awesome/all.min.css" rel="stylesheet" />
+
 
     <style>
         .carousel-wrapper {
@@ -100,42 +99,47 @@
 <body class="bg-light">
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-primary">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
 
             <!-- Sol: Logo ve Menü -->
-            <div class="d-flex align-items-center">
-                <a class="navbar-brand text-white me-3" href="#">CMS</a>
-                <ul class="navbar-nav">
+            <div class="d-flex align-items-center gap-4">
+                <a class="navbar-brand fw-bold text-white" href="#">CMS</a>
+                <ul class="navbar-nav flex-row gap-3">
                     <li class="nav-item">
-                        <a class="nav-link text-white" asp-area="" asp-controller="CustomerHome" asp-action="Index">Home</a>
+                        <a class="nav-link text-white" asp-area="" asp-controller="CustomerHome" asp-action="Index">
+                            <i class="fa-solid fa-house"></i> Home
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" asp-area="" asp-controller="ProductList" asp-action="CustomerIndex">Products</a>
+                        <a class="nav-link text-danger" asp-area="" asp-controller="ProductList" asp-action="CustomerIndex">
+                            <i class="fa-solid fa-bolt-lightning"></i> Products
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="#">İletişim</a>
+                        <a class="nav-link text-warning" href="#">
+                            <i class="fa-solid fa-headset"></i> Contact
+                        </a>
                     </li>
                 </ul>
             </div>
 
-            <!-- Orta: Search tam ortada -->
-            <form class="d-flex mx-auto" style="width: 100%; max-width: 400px; justify-content: center;">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"
-                       style="height: 30px; font-size: 14px; width: 70%;">
-                <button class="btn btn-success" type="submit" style="height: 30px; font-size: 14px;">
+            <!-- Orta: Search -->
+            <form class="d-flex mx-auto w-100 justify-content-center" style="max-width: 400px;">
+                <input class="form-control me-2" type="search" placeholder="Search..." aria-label="Search"
+                       style="height: 34px; font-size: 14px;">
+                <button class="btn btn-success" type="submit" style="height: 34px;">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </form>
 
             <!-- Sağ: LogOut -->
-            <div class="d-flex">
-                <a class="btn btn-danger" asp-area="" asp-controller="Starting" asp-action="LogOut"
-                   style="height: 30px; font-size: 14px;">
+            <div class="text-end">
+                <a class="btn btn-danger d-flex align-items-center gap-2" asp-area="" asp-controller="Starting" asp-action="LogOut"
+                   style="height: 34px; font-size: 14px;">
                     <i class="fa-solid fa-right-from-bracket"></i> LogOut
                 </a>
             </div>
-
         </div>
     </nav>
 
@@ -176,7 +180,7 @@
 					<img src="~/customerimages/92a706e1-5f47-4019-abb4-829f9820d261.jpg" class="card-img-top" alt="Ürün 1">
                     <div class="card-body text-center">
                         <h5 class="card-title">Cars</h5>
-                        <a asp-controller="CustomerHome" asp-action="CarIndex" class="btn btn-buy">Review</a>
+                        <a asp-controller="ProductList" asp-action="CustomerIndex" asp-route-id="1" class="btn btn-buy"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Review</a>
                     </div>
                 </div>
             </div>
@@ -185,7 +189,7 @@
 					<img src="~/customerimages/names-of-household-appliances-in-english.jpg" alt="Ürün 2">
                     <div class="card-body text-center">
                         <h5 class="card-title">House Hold Apliances </h5>
-                        <a asp-controller="CustomerHome" asp-action="HouseStuffsIndex" class="btn btn-buy">Review</a>
+                        <a asp-controller="ProductList" asp-action="CustomerIndex" asp-route-id="4" class="btn btn-buy"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Review</a>
                     </div>
                 </div>
             </div>
@@ -194,7 +198,7 @@
 					<img src="~/customerimages/sny04089.jpg_edit.width-640_ln7jm6qxyvkhfhat.jpg" alt="Ürün 3">
                     <div class="card-body text-center">
                         <h5 class="card-title">Clothes</h5>
-                        <a asp-controller="CustomerHome" asp-action="ClothesIndex" class="btn btn-buy">Review</a>
+                        <a asp-controller="ProductList" asp-action="CustomerIndex" asp-route-id="5" class="btn btn-buy"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Review</a>
                     </div>
                 </div>
             </div>
@@ -203,7 +207,7 @@
 					<img src="~/customerimages/top-15-fashion-accessories-for-men-1.jpg" class="card-img-top" alt="Ürün 4">
                     <div class="card-body text-center">
                         <h5 class="card-title">Accessories</h5>
-                        <a asp-controller="CustomerHome" asp-action="AccessoriesIndex" class="btn btn-buy">Review</a>
+                        <a asp-controller="ProductList" asp-action="CustomerIndex" asp-route-id="6" class="btn btn-buy"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Review</a>
                     </div>
                 </div>
             </div>
@@ -212,7 +216,7 @@
 					<img src="~/customerimages/beauty-personal-care.jpg" class="card-img-top" alt="Ürün 4">
                     <div class="card-body text-center">
                         <h5 class="card-title">Personal Cares</h5>
-                        <a asp-controller="CustomerHome" asp-action="PersonalCaresIndex" class="btn btn-buy">Review</a>
+                        <a asp-controller="ProductList" asp-action="CustomerIndex" asp-route-id="7" class="btn btn-buy"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Review</a>
                     </div>
                 </div>
             </div>
@@ -221,7 +225,7 @@
 					<img src="~/customerimages/essential-books.jpg" class="card-img-top" alt="Ürün 4">
                     <div class="card-body text-center">
                         <h5 class="card-title">Books</h5>
-                        <a asp-controller="CustomerHome" asp-action="BooksIndex" class="btn btn-buy">Review</a>
+                        <a asp-controller="ProductList" asp-action="CustomerIndex" asp-route-id="8" class="btn btn-buy"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Review</a>
                     </div>
                 </div>
             </div>
@@ -233,7 +237,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
+	<script src="~/font-awesome/all.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', function () {
             const text = "Welcome to CMS System";
@@ -252,6 +256,8 @@
 
             setTimeout(typeNextChar, 500); // Başlamadan önce biraz gecikme
         });
+
+
     </script>
 
 

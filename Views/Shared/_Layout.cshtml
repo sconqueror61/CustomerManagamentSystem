@@ -3,53 +3,61 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - CustomerManagementSystem</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+	<title>@ViewData["Title"] - CustomerManagementSystem</title>
+	<link href="~/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CustomerManagementSystem.styles.css" asp-append-version="true" />
-	<link href="~/lib/font-awesome/all.min.css" rel="stylesheet" />
-	<script src="~/lib/font-awesome/all.min.js"></script>
+	<link href="~/font-awesome/all.min.css" rel="stylesheet" />
+	<script src="~/font-awesome/all.min.js"></script>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-dark bg-primary">
-            <div class="container-fluid d-flex justify-content-between align-items-center">
-                <div class="d-flex btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle me-2" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-home me-2"></i>WELCOME
-                    </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" asp-area="" asp-controller="Starting" asp-action="Index"><i class="fa-solid fa-house-user"></i>Welcome</a>
-                        <a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Index"><i class="fa-solid fa-people-group"></i>Customers</a>     
-                        <a class="dropdown-item" href="#">AAAAAAAAAA</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">Separated link</a>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <!-- Sol Menü -->
+                <div class="d-flex">
+                    <!-- Welcome Dropdown -->
+                    <div class="dropdown me-2">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="welcomeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-home me-2"></i>WELCOME
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="welcomeDropdown">
+                            <li><a class="dropdown-item" asp-area="" asp-controller="Starting" asp-action="Index"><i class="fa-solid fa-house-user"></i> Welcome</a></li>
+                            <li><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Index"><i class="fa-solid fa-people-group"></i> Customers</a></li>
+                            <li><a class="dropdown-item" href="#">AAAAAAAAAA</a></li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li><a class="dropdown-item" href="#">Separated link</a></li>
+                        </ul>
                     </div>
-                    <div class="container-fluid d-flex justify-content-between align-items-center">
-                        <div class="d-flex btn-group">
-                            <button type="button" class="btn btn-primary dropdown-toggle me-2" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fa-solid fa-store text-danger me-2"></i><span class="text-danger">Products</span>
-                            </button>
 
-                            <div class="dropdown-menu">
-								<a class="dropdown-item" asp-area="Index" asp-controller="ProductList" asp-action="Index"><i class="fa-solid fa-bolt-lightning"></i>Product List</a> 
-                                <a class="dropdown-item" asp-area="" asp-controller="Product" asp-action="Index"><i class="fa-solid fa-plus"></i>Add Product</a>
-								<a class="dropdown-item" asp-area="" asp-controller="Pcategories" asp-action="Index"><i class="fa-solid fa-layer-group"></i>Categories</a>                                         
-                            </div>
-                        </div>
+                    <!-- Products Dropdown -->
+                    <div class="dropdown me-2">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="productsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-store text-danger me-2"></i><span class="text-danger">Products</span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="productsDropdown">
+                            <li><a class="dropdown-item" asp-area="" asp-controller="ProductList" asp-action="Index"><i class="fa-solid fa-bolt-lightning"></i> Product List</a></li>
+                            <li><a class="dropdown-item" asp-area="" asp-controller="Product" asp-action="Index"><i class="fa-solid fa-plus"></i> Add Product</a></li>
+                            <li><a class="dropdown-item" asp-area="" asp-controller="Pcategories" asp-action="Index"><i class="fa-solid fa-layer-group"></i> Categories</a></li>
+                        </ul>
                     </div>
-                    <a class="navbar-brand text-warning small-navbar-brand" asp-area="" asp-controller="Service" asp-action="Index"><i class="fa-solid fa-truck-fast me-2"></i>Services</a>
+
+                    <!-- Services -->
+                    <a class="navbar-brand text-warning" asp-area="" asp-controller="Service" asp-action="Index">
+                        <i class="fa-solid fa-truck-fast me-2"></i>Services
+                    </a>
                 </div>
+
+                <!-- Sağ Taraf: Arama ve Logout -->
                 <form class="d-flex align-items-center">
                     <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" style="max-width: 150px; height: 30px; font-size: 14px; padding: 2px 5px;">
                     <button class="btn btn-success me-2" type="submit" style="height: 30px; font-size: 14px; padding: 2px 8px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
-                    <button class="btn btn-danger" asp-area="" asp-controller="Starting" asp-action="LogOut" style="height: 30px; font-size: 14px; padding: 2px 8px;">
+                    <a class="btn btn-danger" asp-area="" asp-controller="Starting" asp-action="LogOut" style="height: 30px; font-size: 14px; padding: 2px 8px;">
                         <i class="fa-solid fa-right-from-bracket"></i> LogOut
-                    </button>
+                    </a>
                 </form>
-
             </div>
         </nav>
     </header>
@@ -65,9 +73,7 @@
             &copy; 2025 - CustomerManagementSystem - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+	<script src="~/bootstrap/dist/js/bootstrap.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

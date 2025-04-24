@@ -33,7 +33,7 @@ namespace CustomerManagementSystem.Controllers
 				return RedirectToAction("Login", "Access");
 			}
 
-			return View(new List<Models.Customer>());
+			return View(new List<Customer>());
 		}
 
 		[HttpPost]

@@ -41,7 +41,7 @@ namespace CustomerManagementSystem.Controllers
 
 		}
 
-		public async Task<IActionResult> CustomerIndex()
+		public async Task<IActionResult> CustomerIndex(int id)
 		{
 			if (!UserId.HasValue)
 				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
@@ -49,6 +49,7 @@ namespace CustomerManagementSystem.Controllers
 				.Where(x => x.CreaterUserId == UserId)
 				.OrderBy(x => x.Explanation).ToList();
 			ViewBag.Products = allProducts;
+			ViewBag.categoryId = id;
 			return View();
 
 		}
@@ -81,7 +82,7 @@ namespace CustomerManagementSystem.Controllers
 		}
 
 		[HttpGet]
-		public JsonResult GetAllProducts()
+		public JsonResult GetAllProducts(int? categoryid)
 		{
 			if (!UserId.HasValue)
 				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
@@ -106,11 +107,14 @@ namespace CustomerManagementSystem.Controllers
 								.OrderBy(img => img.Id)
 								.Select(img => img.PictureUrl)
 								.ToList(),
+							p.Stock,
 							p.CreaterUserId
-						})
-						.ToList();
-
-					return Json(new { success = true, data = products });
+						});
+					if (categoryid != null)
+					{
+						products = products.Where(x => x.CategoryId == categoryid);
+					}
+					return Json(new { success = true, data = products.ToList() });
 				}
 				catch (Exception ex)
 				{
@@ -137,11 +141,15 @@ namespace CustomerManagementSystem.Controllers
 								.OrderBy(img => img.Id)
 								.Select(img => img.PictureUrl)
 								.ToList(),
+							p.Stock,
 							p.CreaterUserId
-						})
-						.ToList();
+						});
+					if (categoryid != 0)
+					{
+						products = products.Where(x => x.CategoryId == categoryid);
+					}
 
-					return Json(new { success = true, data = products });
+					return Json(new { success = true, data = products.ToList() });
 				}
 				catch (Exception ex)
 				{
@@ -168,6 +176,7 @@ namespace CustomerManagementSystem.Controllers
 					x.Id,
 					x.Height,
 					x.Width,
+					x.Stock,
 					x.CreaterUserId
 				}).FirstOrDefault();
 
@@ -217,6 +226,7 @@ namespace CustomerManagementSystem.Controllers
 			existingProduct.Height = updatedProduct.Height;
 			existingProduct.Explanation = updatedProduct.Explanation;
 			existingProduct.Description = updatedProduct.Description;
+			existingProduct.Stock = updatedProduct.Stock;
 			updatedProduct.CreaterUserId = UserId.Value;
 			_dbContext.SaveChanges();
 

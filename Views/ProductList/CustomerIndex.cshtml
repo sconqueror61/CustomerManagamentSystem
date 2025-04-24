@@ -1,236 +1,273 @@
 ﻿@{
-    var products = ViewBag.Products as List<CustomerManagementSystem.DB.Product>;
+	var products = ViewBag.Products as List<CustomerManagementSystem.DB.Product>;
+	var viewbagCategoryId = ViewBag.categoryId as int?;
 }
 
 @{
-    Layout = null;
-    ViewData["Title"] = "CustomerIndex";
+	Layout = null;
+	ViewData["Title"] = "CustomerIndex";
 }
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"] - CustomerProductsList</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta charset="utf-8" />
+	<title>@ViewData["Title"] - CustomerProductsList</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link href="~/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/CustomerManagementSystem.styles.css" asp-append-version="true" />
+	<link href="~/font-awesome/all.min.css" rel="stylesheet" />
 
-    <!-- Bootstrap & FontAwesome -->
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/CustomerManagementSystem.styles.css" asp-append-version="true" />
-    <link href="~/lib/font-awesome/all.min.css" rel="stylesheet" />
-    <script src="~/lib/font-awesome/all.min.js"></script>
+	<style>
+		.product-image {
+			width: 100%; /* Resmin genişliğini tamamen kapsayıcıya uydurur */
+			height: 200px; /* Yüksekliği sabitler */
+			object-fit: contain; /* Resmin doğru şekilde sığmasını sağlar */
+			object-position: center; /* Resmin merkezlenmesini sağlar */
+		}
+
+        #highFilter, #lowFilter {
+            white-space: nowrap;
+            padding: 6px 12px;
+        }
+
+	</style>
+
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-primary">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
 
             <!-- Sol: Logo ve Menü -->
-            <div class="d-flex align-items-center">
-                <a class="navbar-brand text-white me-3" href="#">CMS</a>
-                <ul class="navbar-nav">
+            <div class="d-flex align-items-center gap-4">
+                <a class="navbar-brand fw-bold text-white" href="#">CMS</a>
+                <ul class="navbar-nav flex-row gap-3">
                     <li class="nav-item">
-                        <a class="nav-link text-white" asp-area="" asp-controller="CustomerHome" asp-action="Index">Home</a>
+                        <a class="nav-link text-white" asp-area="" asp-controller="CustomerHome" asp-action="Index">
+                            <i class="fa-solid fa-house"></i> Home
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" asp-area="" asp-controller="ProductList" asp-action="CustomerIndex">Products</a>
+                        <a class="nav-link text-danger" asp-area="" asp-controller="ProductList" asp-action="CustomerIndex">
+                            <i class="fa-solid fa-bolt-lightning"></i> Products
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="#">İletişim</a>
+                        <a class="nav-link text-warning" href="#">
+                            <i class="fa-solid fa-headset"></i> Contact
+                        </a>
                     </li>
                 </ul>
             </div>
 
-            <!-- Orta: Search tam ortada -->
-            <form class="d-flex mx-auto" style="width: 100%; max-width: 400px; justify-content: center;">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"
-                       style="height: 30px; font-size: 14px; width: 70%;">
-                <button class="btn btn-success" type="submit" style="height: 30px; font-size: 14px;">
+            <!-- Orta: Search -->
+            <form class="d-flex mx-auto w-100 justify-content-center" style="max-width: 400px;">
+                <input class="form-control me-2" type="search" placeholder="Search..." aria-label="Search"
+                       style="height: 34px; font-size: 14px;">
+                <button class="btn btn-success" type="submit" style="height: 34px;">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </form>
 
             <!-- Sağ: LogOut -->
-            <div class="d-flex">
-                <a class="btn btn-danger" asp-area="" asp-controller="Starting" asp-action="LogOut"
-                   style="height: 30px; font-size: 14px;">
+            <div class="text-end">
+                <a class="btn btn-danger d-flex align-items-center gap-2" asp-area="" asp-controller="Starting" asp-action="LogOut"
+                   style="height: 34px; font-size: 14px;">
                     <i class="fa-solid fa-right-from-bracket"></i> LogOut
                 </a>
             </div>
-
         </div>
     </nav>
 
-    <div class="d-flex flex-column justify-content-center align-items-center min-vh-30">
-        <div class="d-flex align-items-center mt-3">
-            <div class="btn-group me-3" role="group" id="buttonContainer">
-                <!-- Dinamik butonlar buraya eklenecek -->
+    <!-- Ana İçerik: Kategori + Sıralama + Ürünler -->
+    <div class="container mt-4">
+
+        <!-- Kategori ve Sıralama (Tek Satır) -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+
+            <!-- Sol: Kategori Butonları -->
+            <div id="buttonContainer" class="d-flex flex-wrap gap-2 align-items-center">
+                <!-- Dinamik kategori butonları buraya gelir -->
             </div>
 
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary" id="highFilter">
-                    <i class="fa-solid fa-arrow-up"></i> Up $
+            <!-- Sağ: Sıralama Butonları -->
+            <div class="d-flex gap-2 align-items-center mt-2 mt-md-0">
+                <button class="btn btn-outline-secondary d-flex align-items-center gap-1" id="highFilter">
+                    <i class="fa-solid fa-arrow-up"></i> <span>Up $</span>
                 </button>
-                <button class="btn btn-outline-secondary" id="lowFilter">
-                    <i class="fa-solid fa-arrow-down"></i> Down $
+                <button class="btn btn-outline-secondary d-flex align-items-center gap-1" id="lowFilter">
+                    <i class="fa-solid fa-arrow-down"></i> <span>Down $</span>
                 </button>
             </div>
+
         </div>
 
-        <div class="container mt-5">
-            <div id="productContainer" class="row g-3 justify-content-center">
-                <!-- Ürünler buraya gelecek -->
-            </div>
+        <!-- Ürünler -->
+        <div id="productContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 justify-content-center">
+            <!-- Ürün kartları burada gösterilecek -->
         </div>
     </div>
 
 
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Ürünler -->
+        <div id="productContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 justify-content-center">
+            <!-- Ürün kartları burada gösterilecek -->
+        </div>
+    </div>
 
+
+	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="~/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="~/bootstrap/dist/js/bootstrap.bundle.js"></script>
+	<script src="~/bootstrap/dist/js/bootstrap.esm.min.js"></script>
+	<script src="~/bootstrap/dist/js/bootstrap.esm.js"></script>
+	<script src="~/bootstrap/dist/js/bootstrap.min.js"></script>
+	<script src="~/bootstrap/dist/js/bootstrap.js"></script>
+	<script src="~/font-awesome/all.min.js"></script>
     <script>
+        let selectedCategoryId = @ViewBag.categoryId ?? 0;
+        let currentSortOrder = null;
 
         $(document).ready(function () {
-            // Kategori butonlarını yükleme
+            const buttonContainer = $("#buttonContainer");
+
+            // Kategorileri getir ve butonları oluştur
             $.ajax({
                 url: "/Pcategories/GetCategoryByIds",
                 type: "GET",
                 dataType: "json",
                 success: function (catResponse) {
-                    var buttonContainer = $("#buttonContainer");
                     buttonContainer.empty();
 
-                    catResponse.forEach(function (category) {
-                        console.log(category)
-                        var button = $("<button>")
-                            .addClass("btn btn-outline-primary filter-btn")
+                    if (!catResponse.data || catResponse.data.length === 0) {
+                        buttonContainer.text("Kategori bulunamadı.");
+                        return;
+                    }
+
+                    catResponse.data.forEach(function (category) {
+                        const isSelected = selectedCategoryId === category.id;
+
+                        const button = $("<button>")
+                            .addClass("btn filter-btn me-2 mb-2")
+                            .addClass(isSelected ? "btn-primary" : "btn-outline-primary")
                             .attr("data-id", category.id)
                             .text(category.categories)
                             .on("click", function () {
+                                // Seçili butonu güncelle
+                                if (selectedCategoryId !== category.id) {
+                                    selectedCategoryId = category.id;
+                                } else {
+                                    selectedCategoryId = 0;
+                                }
+
+                                // Stil güncellemesi
                                 $(".filter-btn").removeClass("btn-primary").addClass("btn-outline-primary");
-                                $(this).removeClass("btn-outline-primary").addClass("btn-primary");
-                            })
-                            .appendTo("#buttonContainer");
+                                if (selectedCategoryId !== 0) {
+                                    $(this).removeClass("btn-outline-primary").addClass("btn-primary");
+                                }
+
+                                loadProducts();
+                            });
+
+                        buttonContainer.append(button);
                     });
+
+                    loadProducts(); // İlk yükleme
                 },
-                error: function (xhr, status, error) {
-                    console.error("AJAX hatası:", error);
-                    $("#buttonContainer").text("Kategoriler yüklenemedi");
+                error: function () {
+                    buttonContainer.text("Kategoriler yüklenemedi.");
                 }
             });
 
-        });
-
-        $(document).ready(function () {
-        let currentSortOrder = "asc";
-
-         function loadProducts(selectedCategoryId = null, sortOrder = "asc") {
-             $.ajax({
-                 url: "/ProductList/GetAllProducts",
-                 type: "GET",
-                 data: { categoryId: selectedCategoryId },
-                 dataType: "json",
-                 success: function (response) {
-                     if (!response.success) {
-                         $("#productContainer").html(`<p class="text-danger text-center">${response.message}</p>`);
-                         return;
-                     }
-
-                     let data = response.data;
-
-                     if (selectedCategoryId) {
-                         data = data.filter(item => item.categoryId == selectedCategoryId);
-                     }
-
-                     // **Fiyat sıralaması**
-                     data.sort((a, b) => {
-                         return sortOrder === "asc" ? a.price - b.price : b.price - a.price;
-                     });
-
-                     let productHtml = "";
-                     if (data && data.length > 0) {
-                         data.forEach(item => {
-                             let firstImage = item.pimages?.length > 0 ? item.pimages[0] : "/images/no-image.png";
-
-                             productHtml += `
-                                 <div class="col-md-4 mb-4">
-                                     <div class="card" style="max-width: 18rem; max-height: 400px; overflow: hidden;">
-                                         <div class="d-flex justify-content-center">
-                                             <img src="${firstImage}" class="img-fluid mb-3 img-thumbnail" style="max-height: 200px; object-fit: cover;">
-                                         </div>
-                                         <div class="card-body">
-                                             <h5 class="card-title text-truncate" style="max-width: 100%;">
-                                                 <span>Brand:</span> ${item.explanation}
-                                             </h5>
-                                             <h6 class="card-subtitle mb-2 text-muted">
-                                                 <span>Description:</span> ${item.description}
-                                             </h6>
-                                             <h5 class="card-text text-truncate" style="max-height: 100px; overflow: hidden;">
-                                                 <span>Price:</span> ${item.price}$                                              
-                                             </h5>
-                                         </div>
-                                     </div>
-                                 </div>`;
-                         });
-                     } else {
-                         productHtml = `<p class="text-center">No products available.</p>`;
-                     }
-
-                     $("#productContainer").html(productHtml);
-                 },
-                 error: function () {
-                     $("#productContainer").html(`<p class="text-danger text-center">Failed to load products.</p>`);
-                 }
-             });
-         }
-
-         // Sayfa yüklendiğinde ürünleri varsayılan olarak yükle
-         loadProducts();
-
-         // **Sıralama butonları için event listener**
-         $("#highFilter").click(function () {
-             currentSortOrder = "desc";
-             loadProducts(null, "desc");
-         });
-
-         $("#lowFilter").click(function () {
-             currentSortOrder = "asc";
-             loadProducts(null, "asc");
-         });
-            // Filtre butonlarına tıklanınca ürünleri güncelle
-            $(document).on("click", ".filter-btn", function () {
-                let selectedCategoryId = $(this).attr("data-id");
-                loadProducts(selectedCategoryId);
-            });
-        });
-
-             function Get(itemId) {
+            // Ürünleri yükle
+            function loadProducts() {
                 $.ajax({
-                    url: '/ProductList/GetProduct',
-                    type: 'GET',
-                    data: {itemId},
-                    success: function (data) {
-                        $('#explanationE').val("Explanation="+data.explanation);
-                        $('#descriptionE').val("Description="+data.description);
-                        $('#widthE').val("Width="+data.width);
-                        $('#heightE').val("Height="+data.height);
-                        $('#priceE').val("Price="+data.price);
-                        $('#breakibilityE').val("Breakibility="+data.breakibility);
+                    url: "/ProductList/GetAllProducts",
+                    type: "GET",
+                    data: { categoryId: selectedCategoryId },
+                    dataType: "json",
+                    success: function (response) {
+                        const container = $("#productContainer");
+
+                        if (!response.success || !response.data || response.data.length === 0) {
+                            container.html(`<p class="text-center">Ürün bulunamadı.</p>`);
+                            return;
+                        }
+
+                        let products = response.data;
+
+                        // Sıralama uygula
+                        if (currentSortOrder === "asc") {
+                            products.sort((a, b) => a.price - b.price);
+                        } else if (currentSortOrder === "desc") {
+                            products.sort((a, b) => b.price - a.price);
+                        }
+
+                        // Ürün kartlarını oluştur
+                        let html = "";
+                        products.forEach(item => {
+                            const image = item.pimages?.length > 0 ? item.pimages[0] : "/images/no-image.png";
+                            html += `
+                                <div class="col-md-4 mb-4">
+                                    <div class="card shadow-sm border-0 h-100 hover-shadow transition" style="cursor:pointer;" onclick="redirectToCategory(${item.categoryId})">
+                                        <img src="${image}" class="card-img-top img-fluid product-image">
+                                        <div class="card-body">
+                                            <h5 class="card-title text-primary">${item.explanation}</h5>
+                                            <p class="card-text text-muted">${item.description}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="fw-bold text-success">${item.price}$</span>
+                                                <i class="fa-solid fa-arrow-right text-secondary"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        container.html(html);
                     },
-                    error: function (xhr, status, error) {
-                        console.error("Ürün bilgileri alınamadı: " + error + itemId);
+                    error: function () {
+                        $("#productContainer").html(`<p class="text-danger text-center">Ürünler yüklenemedi.</p>`);
                     }
                 });
             }
 
+            // Fiyat filtreleme
+            $("#highFilter").click(function () {
+                if (currentSortOrder !== "desc") {
+                    currentSortOrder = "desc";
+                    $("#highFilter").removeClass("btn-outline-secondary").addClass("btn-secondary");
+                    $("#lowFilter").removeClass("btn-secondary").addClass("btn-outline-secondary");
+                } else {
+                    currentSortOrder = null;
+                    $("#highFilter").removeClass("btn-secondary").addClass("btn-outline-secondary");
+                }
+                loadProducts();
+            });
+
+            $("#lowFilter").click(function () {
+                if (currentSortOrder !== "asc") {
+                    currentSortOrder = "asc";
+                    $("#lowFilter").removeClass("btn-outline-secondary").addClass("btn-secondary");
+                    $("#highFilter").removeClass("btn-secondary").addClass("btn-outline-secondary");
+                } else {
+                    currentSortOrder = null;
+                    $("#lowFilter").removeClass("btn-secondary").addClass("btn-outline-secondary");
+                }
+                loadProducts();
+            });
+        });
     </script>
 
 
-    <footer class="footer bg-light text-center py-3">
-        <div class="container">
-            <span class="text-muted">&copy; @DateTime.Now.Year - Customer Management System</span>
-        </div>
-    </footer>
+	<footer class="footer bg-light text-center py-3">
+		<div class="container">
+			<span class="text-muted">&copy; @DateTime.Now.Year - Customer Management System</span>
+		</div>
+	</footer>
 </body>
 </html>

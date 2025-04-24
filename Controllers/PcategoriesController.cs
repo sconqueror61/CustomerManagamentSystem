@@ -68,22 +68,24 @@ namespace CustomerManagementSystem.Controllers
 		public IActionResult GetCategoryByIds()
 		{
 			if (!UserId.HasValue)
+			{
 				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
+			}
 
-			var categoryId = _context.PmainCategories
+			var categories = _context.PmainCategories
 				.Select(x => new
 				{
-					x.Id,
-					x.Categories
+					id = x.Id,
+					categories = x.Categories
 				})
 				.ToList();
 
-			if (!categoryId.Any())
+			if (!categories.Any())
 			{
-				return NotFound(new { message = "Kategori bulunamadı!" });
+				return Json(new { success = false, message = "Kategori bulunamadı!" });
 			}
 
-			return Ok(categoryId);
+			return Json(new { success = true, data = categories });
 		}
 
 

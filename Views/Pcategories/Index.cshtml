@@ -33,7 +33,7 @@
     <div id="addModal" class="modal fade" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Add</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -53,9 +53,9 @@
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer bg-success">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-                    <button type="button" id="addB" class="btn btn-primary">Add</button>
+                <div class="modal-footer bg-primary">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Close</button>
+                    <button type="button" id="addB" class="btn btn-success"><i class="fa-solid fa-plus"></i> Add</button>
                 </div>
             </div>
         </div>
@@ -64,13 +64,14 @@
     <!-- Edit Modal -->
     <div id="editModal" class="modal fade" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content ">
                 <div class="modal-header bg-warning text-white">
                     <h5 class="modal-title">Edit</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addForm">
+
+                    <form id="editForm">
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="categoryE">Category</label>
@@ -86,8 +87,8 @@
                     </form>
                 </div>
                 <div class="modal-footer bg-warning">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-                    <button type="button" id="editB" class="btn btn-primary">Add</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Close</button>
+                    <button type="button" id="editB" class="btn btn-success"><i class="fa-solid fa-arrow-up-from-bracket"></i> Upload</button>
                 </div>
             </div>
         </div>
@@ -102,11 +103,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <p>Are You Sure to Delete This Category?</p>
+                    <h5>Are You Sure to Delete This Category?</h5>
                 </div>
                 <div class="modal-footer bg-danger">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button type="button" id="deleteB" class="btn btn-outline-light">Delete</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Close</button>
+                    <button type="button" id="deleteB" class="btn btn-warning"><i class="fa-solid fa-trash-can"></i> Delete</button>
                 </div>
             </div>
         </div>
@@ -121,57 +122,57 @@
         $(document).ready(function () {
             loadCategories();
 
-        $('#descriptionA').on('focus', function () {
-            $(this).val('');
-        });
-
-        function loadCategories() {
-            let tableBody = $('#categoryTable');
-            tableBody.empty();
-
-            $.ajax({
-                url: "/Pcategories/GetCategoryByIds",
-                type: 'GET',
-                success: function (mainCategories) {
-                    $.ajax({
-                        url: "/Pcategories/GetCreatedCategories",
-                        type: 'GET',
-                        success: function (descData) {
-                            if (Array.isArray(mainCategories) && Array.isArray(descData.categoriesDesc)) {
-                                for (let i = 0; i < descData.categoriesDesc.length; i++) {
-                                    console.log(descData)
-                                    let categoryDesc = descData.categoriesDesc[i];
-                                    
-                                    // 🔧 Doğru eşleştirme burası
-                                    let category = mainCategories.find(c => c.id === categoryDesc.categoryId);
-                                    let categoryName = category ? category.categories : "N/A";
-
-                                    tableBody.append(`
-                                        <tr>
-                                            <td>${categoryName}</td>
-                                            <td>${categoryDesc.categoryDesc}</td>
-                                            <td>
-                                                <button class="btn btn-danger btn-sm deleteBtn" data-id="${categoryDesc.id}">Delete</button>
-                                                <button class="btn btn-warning btn-sm editBtn" data-id="${categoryDesc.id}">Edit</button>
-                                            </td>
-                                        </tr>
-                                    `);
-                                }
-                            } else {
-                                alert("Veri yapıları beklenen formatta değil.");
-                            }
-                        },
-                        error: function () {
-                            alert('Açıklamalar (CategoryDesc) yüklenemedi.');
-                        }
-                    });
-                },
-                error: function () {
-                    alert('Ana kategoriler (CategoryName) yüklenemedi.');
-                }
+            $('#descriptionA').on('focus', function () {
+                $(this).val('');
             });
-        }
 
+            function loadCategories() {
+                let tableBody = $('#categoryTable');
+                tableBody.empty();
+
+                $.ajax({
+                    url: "/Pcategories/GetCategoryByIds",
+                    type: 'GET',
+                    success: function (mainCategories) {
+                        console.log("Ana kategoriler:", mainCategories);
+
+                        $.ajax({
+                            url: "/Pcategories/GetCreatedCategories",
+                            type: 'GET',
+                            success: function (descData) {
+                                console.log("Kategori açıklamaları:", descData);
+
+                                if (Array.isArray(mainCategories.data) && descData && Array.isArray(descData.categoriesDesc)) {
+                                    for (let i = 0; i < descData.categoriesDesc.length; i++) {
+                                        let categoryDesc = descData.categoriesDesc[i];
+                                        let category = mainCategories.data.find(c => c.id === categoryDesc.categoryId);
+                                        let categoryName = category ? category.categories : "N/A";
+
+                                        tableBody.append(`
+                                            <tr>
+                                                <td>${categoryName}</td>
+                                                <td>${categoryDesc.categoryDesc}</td>
+                                                <td>
+                                                    <button class="btn btn-danger btn-sm deleteBtn" data-id="${categoryDesc.id}">Delete</button>
+                                                    <button class="btn btn-warning btn-sm editBtn" data-id="${categoryDesc.id}">Edit</button>
+                                                </td>
+                                            </tr>
+                                        `);
+                                    }
+                                } else {
+                                    alert("Veri yapıları beklenen formatta değil.");
+                                }
+                            },
+                            error: function () {
+                                alert('Açıklamalar (CategoryDesc) yüklenemedi.');
+                            }
+                        });
+                    },
+                    error: function () {
+                        alert('Ana kategoriler (CategoryName) yüklenemedi.');
+                    }
+                });
+            }
 
             $(document).on('click', '.deleteBtn', function () {
                 selectedId = $(this).data("id");
@@ -196,17 +197,16 @@
             $(document).on('click', '.editBtn', function () {
                 selectedId = $(this).data("id");
                 $('#editModal').modal("show");
-                 $.ajax({
+
+                $.ajax({
                     url: '/Pcategories/GetCategoryByIds',
                     type: 'GET',
                     success: function (data) {
-                        console.log(data)
                         let select = $('#categoryE');
                         select.empty().append('<option disabled selected value="">Select a Category</option>');
 
                         $.each(data, function (index, item) {
                             select.append(`<option value="${item.id}">${item.categories}</option>`);
-
                         });
                     },
                     error: function () {
@@ -216,54 +216,66 @@
             });
 
             $('#editB').click(function () {
-            let datas = {
-                Id: selectedId,
-                CategoryDesc: $('#descriptionE').val(),
-                categoryid: $('#categoryE').val() // eğer modelde öyleyse
-            };
+                let datas = {
+                    Id: selectedId,
+                    CategoryDesc: $('#descriptionE').val(),
+                    CategoryId: $('#categoryE').val()
+                };
+
+                $.ajax({
+                    url: "/Pcategories/Edit",
+                    type: 'POST',
+                    data: datas,
+                    success: function () {
+                        alert('Kategori başarıyla güncellendi!');
+                        $('#editModal').modal('hide');
+                        loadCategories();
+                    },
+                    error: function () {
+                        alert('Güncelleme sırasında hata oluştu.');
+                    }
+                });
+            });
+        $('#addModalB').click(function () {
+            $('#addModal').modal('show');
 
             $.ajax({
-                url: "/Pcategories/Edit",
-                type: 'POST',
-                data: datas,
-                success: function () {
-                    alert('Kategori başarıyla güncellendi!');
-                    $('#editModal').modal('hide');
-                    loadCategories(); // tabloyu yenile
+                url: '/Pcategories/GetCategoryByIds',
+                type: 'GET',
+                success: function (response) {
+                    // Konsola gelen veriyi kontrol et
+                    console.log("add - Gelen veri:", response);
+
+                    let select = $('#categoryA');
+                    select.empty().append('<option disabled selected value="">Select a Category</option>');
+
+                    // Verinin beklenen formatta olup olmadığını kontrol et
+                    if (Array.isArray(response.data)) {
+                        $.each(response.data, function (index, item) {
+                            console.log("add - Kategori:", item);
+                            select.append(`<option value="${item.id}">${item.categories}</option>`);
+                        });
+                    } else {
+                        console.log('Veri beklenen formatta değil:', response.data);
+                        alert('Veri yapısı beklenenden farklı.');
+                    }
                 },
-                error: function () {
-                    alert('Güncelleme sırasında hata oluştu.');
+                error: function (xhr, status, error) {
+                    // AJAX isteği başarısız olursa konsola detaylı hata yaz
+                    console.error("AJAX Hatası:", status, error);
+                    alert('Kategoriler yüklenemedi.');
                 }
             });
         });
 
-            $('#addModalB').click(function () {
-                $('#addModal').modal('show');
-
-                $.ajax({
-                    url: '/Pcategories/GetCategoryByIds',
-                    type: 'GET',
-                    success: function (data) {
-                        let select = $('#categoryA');
-                        select.empty().append('<option disabled selected value="">Select a Category</option>');
-
-                        $.each(data, function (index, item) {
-                            select.append(`<option value="${item.id}">${item.categories}</option>`);
-                        });
-                    },
-                    error: function () {
-                        alert('Kategoriler yüklenemedi.');
-                    }
-                });
-            });
 
             $('#addB').click(function () {
                 let datas = {
-                    categoryDesc: $('#descriptionA').val(),
-                    categoryid: $('#categoryA').val()
+                    CategoryDesc: $('#descriptionA').val(),
+                    CategoryId: $('#categoryA').val()
                 };
 
-                if (!datas.categoryDesc || !datas.categoryid) {
+                if (!datas.CategoryDesc || !datas.CategoryId) {
                     alert("Lütfen tüm alanları doldurun.");
                     return;
                 }
