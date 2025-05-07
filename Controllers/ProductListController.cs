@@ -46,7 +46,6 @@ namespace CustomerManagementSystem.Controllers
 			if (!UserId.HasValue)
 				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
 			var allProducts = _dbContext.Products
-				.Where(x => x.CreaterUserId == UserId)
 				.OrderBy(x => x.Explanation).ToList();
 			ViewBag.Products = allProducts;
 			ViewBag.categoryId = id;

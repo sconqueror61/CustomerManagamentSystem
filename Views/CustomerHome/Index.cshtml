@@ -2,7 +2,7 @@
 
 @{
     Layout = null;
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "CustomerHome";
 }
 
 <!DOCTYPE html>
@@ -117,7 +117,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-warning" href="#">
+                        <a class="nav-link text-warning" asp-area="" asp-controller="UserBasket" asp-action="Index">
+                            <i class="fa-solid fa-cart-shopping"></i> Shopping Basket
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-black" href="#">
                             <i class="fa-solid fa-headset"></i> Contact
                         </a>
                     </li>

@@ -1,0 +1,333 @@
+﻿@model IEnumerable<CustomerManagementSystem.DB.User>
+@{
+    Layout = null;
+    ViewData["Title"] = "Shopping Basket";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - CMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="~/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/CustomerManagementSystem.styles.css" asp-append-version="true" />
+    <link href="~/font-awesome/all.min.css" rel="stylesheet" />
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .card-img-top {
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .card-body h5 {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .filter-btn {
+            min-width: 100px;
+        }
+
+        #productContainer .card {
+            transition: transform 0.2s ease;
+        }
+
+        #productContainer .card:hover {
+            transform: scale(1.02);
+        }
+
+        .product-image {
+            width: 100%; /* Resmin genişliğini tamamen kapsayıcıya uydurur */
+            height: 200px; /* Yüksekliği sabitler */
+            object-fit: contain; /* Resmin doğru şekilde sığmasını sağlar */
+            object-position: center; /* Resmin merkezlenmesini sağlar */
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
+
+            <!-- Sol: Logo ve Menü -->
+            <div class="d-flex align-items-center gap-4">
+                <a class="navbar-brand fw-bold text-white" href="#">CMS</a>
+                <ul class="navbar-nav flex-row gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-area="" asp-controller="CustomerHome" asp-action="Index">
+                            <i class="fa-solid fa-house"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" asp-area="" asp-controller="ProductList" asp-action="CustomerIndex">
+                            <i class="fa-solid fa-bolt-lightning"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" asp-area="" asp-controller="UserBasket" asp-action="Index">
+                            <i class="fa-solid fa-cart-shopping"></i> Shopping Basket
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-black" href="#">
+                            <i class="fa-solid fa-headset"></i> Contact
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Orta: Search -->
+            <form class="d-flex mx-auto w-100 justify-content-center" style="max-width: 400px;">
+                <input class="form-control me-2" type="search" placeholder="Search..." aria-label="Search"
+                       style="height: 34px; font-size: 14px;">
+                <button class="btn btn-success" type="submit" style="height: 34px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+
+            <!-- Sağ: LogOut -->
+            <div class="text-end">
+                <a class="btn btn-danger d-flex align-items-center gap-2" asp-area="" asp-controller="Starting" asp-action="LogOut"
+                   style="height: 34px; font-size: 14px;">
+                    <i class="fa-solid fa-right-from-bracket"></i> LogOut
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Ana İçerik: Kategori + Sıralama + Ürünler -->
+    <div class="container mt-4">
+
+        <!-- Kategori, Sıralama ve Toplam Fiyat (Tek Satır) -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+
+            <!-- Sol: Kategori Butonları -->
+            <div id="buttonContainer" class="d-flex flex-wrap gap-2 align-items-center">
+                <!-- Dinamik kategori butonları buraya gelir -->
+            </div>
+
+            <!-- Sağ: Sıralama ve Toplam -->
+            <div class="d-flex flex-wrap align-items-center gap-3">
+
+                <!-- Sıralama Butonları -->
+                <div class="d-flex gap-2 align-items-center">
+                    <button class="btn btn-outline-secondary d-flex align-items-center gap-1" id="highFilter">
+                        <i class="fa-solid fa-arrow-up"></i> <span>Up $</span>
+                    </button>
+                    <button class="btn btn-outline-secondary d-flex align-items-center gap-1" id="lowFilter">
+                        <i class="fa-solid fa-arrow-down"></i> <span>Down $</span>
+                    </button>
+                </div>
+
+                <!-- Toplam Fiyat -->
+                <div id="totalPriceContainer" class="fw-bold fs-5 text-success text-nowrap">
+                    <!-- JavaScript ile doldurulacak -->
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Ürünler -->
+        <div id="productContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+            <!-- Ürün kartları burada gösterilecek -->
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="~/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="~/font-awesome/all.min.js"></script>
+
+    <script>
+        let selectedCategoryId = 0;
+        let currentSortOrder = null;
+
+        $(document).ready(function () {
+            loadCategories();
+
+            function loadCategories() {
+                $.get("/Pcategories/GetCategoryByIds")
+                    .done(function (res) {
+                        const container = $("#buttonContainer").empty();
+
+                        if (!res.data || res.data.length === 0) {
+                            container.text("Kategori bulunamadı.");
+                            return;
+                        }
+
+                        res.data.forEach(cat => {
+                            const btn = $("<button>")
+                                .addClass("btn filter-btn me-2 mb-2")
+                                .toggleClass("btn-primary", selectedCategoryId === cat.id)
+                                .toggleClass("btn-outline-primary", selectedCategoryId !== cat.id)
+                                .text(cat.categories)
+                                .attr("data-id", cat.id)
+                                .on("click", function () {
+                                    selectedCategoryId = (selectedCategoryId === cat.id) ? 0 : cat.id;
+                                    $(".filter-btn").removeClass("btn-primary").addClass("btn-outline-primary");
+                                    if (selectedCategoryId !== 0) $(this).removeClass("btn-outline-primary").addClass("btn-primary");
+                                    loadProducts();
+                                });
+                            container.append(btn);
+                        });
+
+                        loadProducts();
+                    })
+                    .fail(err => {
+                        console.error("Kategori yüklenemedi", err);
+                        $("#buttonContainer").text("Kategori yüklenemedi.");
+                    });
+            }
+
+            function loadProducts() {
+            $.get("/UserBasket/GetUserBasketProducts")
+                .done(function (res) {
+                    console.log(res);
+                    const container = $("#productContainer").empty();
+
+                    // Toplam fiyatı göster
+                    $("#totalPriceContainer").text("Total: $" + res.total.toFixed(2));
+
+                    if (!res.success || !res.data || res.data.length === 0) {
+                        container.html('<div class="alert alert-warning text-center">Basket is Empty</div>');
+                        $("#totalPriceContainer").text(""); // sepet boşsa toplamı temizle
+                        return;
+                    }
+
+                    let products = res.data;
+
+                    if (selectedCategoryId !== 0) {
+                        products = products.filter(p => p.categoryId === selectedCategoryId);
+                    }
+
+                    if (currentSortOrder === "asc") {
+                        products.sort((a, b) => a.price - b.price);
+                    } else if (currentSortOrder === "desc") {
+                        products.sort((a, b) => b.price - a.price);
+                    }
+
+                    for (let p of products) {
+                        const img = (p.pimages?.length > 0) ? p.pimages[0] : "/images/no-image.png";
+
+                        container.append(`
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card shadow-sm h-100 border-0">
+                                    <img src="${img}" class="card-img-top product-image" alt="${p.explanation}">
+                                    <div class="card-body text-center">
+                                        <h5 class="text-primary">${p.explanation}</h5>
+                                        <p class="text-muted">${p.description}</p>
+                                        <p class="fw-bold text-success">${p.price}$</p>
+                                        <p class="text-secondary">Quantity: ${p.amount}</p>
+                                        <p class="fw-bold">Subtotal: $${p.totalPrice.toFixed(2)}</p>
+                                        <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                                            <button class="btn btn-sm btn-outline-danger minus-btn" data-id="${p.id}"><i class="fa fa-minus"></i></button>
+                                            <span id="quantity-${p.id}" class="fw-bold">${p.amount}</span>
+                                            <button class="btn btn-sm btn-outline-success plus-btn" data-id="${p.id}" data-stock="${p.stock}"><i class="fa fa-plus"></i></button>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary w-100 update-basket" data-id="${p.id}"><i class="fa fa-cart-plus"></i> Update</button>
+                                        <button class="btn btn-sm btn-outline-danger w-100 mt-2 delete-product" data-id="${p.id}"><i class="fa fa-trash"></i> Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    }
+
+                    bindEvents();
+                })
+                .fail(err => {
+                    console.error("Ürünler yüklenemedi", err);
+                    $("#productContainer").html('<div class="alert alert-danger text-center">Ürünler yüklenemedi.</div>');
+                    $("#totalPriceContainer").text("");
+                });
+        }
+
+
+        function bindEvents() {
+            $(".plus-btn").click(function () {
+                const productId = $(this).data("id");
+                const stock = $(this).data("stock");
+                let quantity = parseInt($(`#quantity-${productId}`).text());
+
+                if (quantity < stock) {
+                    quantity++;
+                    $(`#quantity-${productId}`).text(quantity);
+                }
+            });
+
+            $(".minus-btn").click(function () {
+                const productId = $(this).data("id");
+                let quantity = parseInt($(`#quantity-${productId}`).text());
+
+                if (quantity > 1) {
+                    quantity--;
+                    $(`#quantity-${productId}`).text(quantity);
+                }
+            });
+
+            $(".update-basket").click(function () {
+                const productId = $(this).data("id");
+                const quantity = parseInt($(`#quantity-${productId}`).text());
+
+                $.ajax({
+                    url: "/UserBasket/SetTotalAmount",
+                    type: "POST",
+                    data: { productId, quantity },
+                    success: function () {
+                        alert("Sepet güncellendi.");
+                    },
+                    error: function () {
+                        alert("Güncelleme hatası.");
+                    }
+                });
+            });
+
+            $(".delete-product").click(function () {
+            const productId = $(this).data("id");
+            console.log(productId);
+
+            $.ajax({
+                url: `/UserBasket/DeleteProductFromBasket?productId=${productId}`,  // URL parametresi olarak gönderiyoruz
+                type: "DELETE",  // DELETE metodu ile istek
+                success: function (res) {
+                    if (res.success) {
+                        alert("Ürün sepetten çıkarıldı.");
+                        loadProducts();  // Sepeti yeniden yükle
+                    } else {
+                        alert("Ürün silinemedi: " + res.message);
+                    }
+                },
+                error: function () {
+                    alert("Ürün silme hatası.");
+                }
+            });
+        });
+        }
+
+
+            $("#lowFilter").click(() => {
+                currentSortOrder = (currentSortOrder !== "asc") ? "asc" : null;
+                toggleSortButtons(); loadProducts();
+            });
+
+            $("#highFilter").click(() => {
+                currentSortOrder = (currentSortOrder !== "desc") ? "desc" : null;
+                toggleSortButtons(); loadProducts();
+            });
+
+            function toggleSortButtons() {
+                $("#lowFilter").toggleClass("btn-secondary", currentSortOrder === "asc").toggleClass("btn-outline-secondary", currentSortOrder !== "asc");
+                $("#highFilter").toggleClass("btn-secondary", currentSortOrder === "desc").toggleClass("btn-outline-secondary", currentSortOrder !== "desc");
+            }
+        });
+    </script>
+
+</body>
+</html>

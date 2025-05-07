@@ -56,7 +56,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-warning" href="#">
+                        <a class="nav-link text-warning" asp-area="" asp-controller="UserBasket" asp-action="Index">
+                            <i class="fa-solid fa-cart-shopping"></i> Shopping Basket
+                        </a>
+                    </li>
+                    <li class="nav-item text-secondary">
+                        <a class="nav-link text-black" href="#">
                             <i class="fa-solid fa-headset"></i> Contact
                         </a>
                     </li>
@@ -106,27 +111,13 @@
         </div>
 
         <!-- Ürünler -->
-        <div id="productContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 justify-content-center">
+        <div id="productContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
             <!-- Ürün kartları burada gösterilecek -->
         </div>
     </div>
-
-
-        <!-- Ürünler -->
-        <div id="productContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 justify-content-center">
-            <!-- Ürün kartları burada gösterilecek -->
-        </div>
-    </div>
-
-
 	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="~/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="~/bootstrap/dist/js/bootstrap.bundle.js"></script>
-	<script src="~/bootstrap/dist/js/bootstrap.esm.min.js"></script>
-	<script src="~/bootstrap/dist/js/bootstrap.esm.js"></script>
 	<script src="~/bootstrap/dist/js/bootstrap.min.js"></script>
-	<script src="~/bootstrap/dist/js/bootstrap.js"></script>
 	<script src="~/font-awesome/all.min.js"></script>
     <script>
         let selectedCategoryId = @ViewBag.categoryId ?? 0;
@@ -157,14 +148,12 @@
                             .attr("data-id", category.id)
                             .text(category.categories)
                             .on("click", function () {
-                                // Seçili butonu güncelle
                                 if (selectedCategoryId !== category.id) {
                                     selectedCategoryId = category.id;
                                 } else {
                                     selectedCategoryId = 0;
                                 }
 
-                                // Stil güncellemesi
                                 $(".filter-btn").removeClass("btn-primary").addClass("btn-outline-primary");
                                 if (selectedCategoryId !== 0) {
                                     $(this).removeClass("btn-outline-primary").addClass("btn-primary");
@@ -213,14 +202,16 @@
                             const image = item.pimages?.length > 0 ? item.pimages[0] : "/images/no-image.png";
                             html += `
                                 <div class="col-md-4 mb-4">
-                                    <div class="card shadow-sm border-0 h-100 hover-shadow transition" style="cursor:pointer;" onclick="redirectToCategory(${item.categoryId})">
+                                    <div class="card shadow-sm border-0 h-100 hover-shadow transition" style="cursor:pointer;">
                                         <img src="${image}" class="card-img-top img-fluid product-image">
-                                        <div class="card-body">
+                                        <div class="card-body text-center d-flex flex-column align-items-center">
                                             <h5 class="card-title text-primary">${item.explanation}</h5>
                                             <p class="card-text text-muted">${item.description}</p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="fw-bold text-success">${item.price}$</span>
-                                                <i class="fa-solid fa-arrow-right text-secondary"></i>
+                                            <span class="fw-bold text-success">${item.price}$</span>
+                                            <div id='amountDiv-${item.id}'>
+                                                    <button class='btn btn-primary' onClick="addtobasket(${item.id}, '${item.explanation}', ${item.stock}, ${item.price})">
+                                                <i class="fa-solid fa-cart-arrow-down"></i> Add Basket
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -261,6 +252,71 @@
                 loadProducts();
             });
         });
+
+            function addtobasket(productId, explanation, stock, price) {
+                const amountDiv = $(`#amountDiv-${productId}`);
+                amountDiv.empty();
+
+                let quantity = 1;
+
+                const updateTotal = () => {
+                    quantityInput.text(quantity);
+                };
+
+                const container = $("<div>").addClass("d-flex flex-column align-items-center");
+
+                const controlRow = $("<div>").addClass("d-flex align-items-center gap-2 mb-1");
+
+                const minusBtn = $("<button>")
+                    .addClass("btn btn-sm btn-outline-danger")
+                    .html("<i class='fa fa-minus'></i>")
+                    .click(() => {
+                        if (quantity > 1) {
+                            quantity--;
+                            updateTotal();
+                        }
+                    });
+
+                const quantityInput = $("<span>")
+                    .addClass("px-3 fw-bold")
+                    .text(quantity);
+
+                const plusBtn = $("<button>")
+                    .addClass("btn btn-sm btn-outline-success")
+                    .html("<i class='fa fa-plus'></i>")
+                    .click(() => {
+                        if (quantity < stock) {
+                            quantity++;
+                            updateTotal();
+                        }
+                    });
+
+                const purchaseBtn = $("<a>")
+                    .addClass("btn btn-sm btn-outline-primary mt-2")
+                        .html("<i class='fa-solid fa-cart-plus'></i> Add To Basket")
+                    .click(function (e) {
+                        e.preventDefault();
+                        $.ajax({
+                            url: "/UserBasket/SetTotalAmount",
+                            type: "POST",
+                            data: { quantity: quantity, productId: productId },
+                            success: function () {
+                                alert("Added to Basket successfully!");
+                                location.reload();
+                            },
+                            error: function () {
+                                alert("Unexpected Error!");
+                                location.reload();
+                            }
+                        });
+                    });
+
+                controlRow.append(minusBtn, quantityInput, plusBtn);
+                container.append(controlRow, purchaseBtn);
+                amountDiv.append(container);
+            }
+
+
     </script>
 
 
