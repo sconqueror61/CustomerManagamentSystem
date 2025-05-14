@@ -40,6 +40,7 @@ namespace CustomerManagementSystem.Controllers
 		{
 			if (!UserId.HasValue)
 				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
+
 			try
 			{
 				var products = _context.Products
@@ -58,7 +59,7 @@ namespace CustomerManagementSystem.Controllers
 							.OrderBy(img => img.Id)
 							.Select(img => img.PictureUrl)
 							.ToList(),
-						p.CreaterUserId
+						p.CreaterUserId,
 					})
 					.ToList();
 
@@ -84,7 +85,8 @@ namespace CustomerManagementSystem.Controllers
 					x.Id,
 					x.Height,
 					x.Width,
-					x.CreaterUserId
+					x.CreaterUserId,
+					x.Stock
 				}).FirstOrDefault();
 			return Json(product);
 		}

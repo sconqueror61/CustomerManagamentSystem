@@ -18,7 +18,7 @@ namespace CustomerManagementSystem.Controllers
 		{
 			get
 			{
-				var userIdClaim = User.FindFirst("Id")?.Value;
+				var userIdClaim = User.FindFirst("UserId")?.Value;
 				if (int.TryParse(userIdClaim, out int userId))
 					return userId;
 				return null;
@@ -42,6 +42,7 @@ namespace CustomerManagementSystem.Controllers
 					.ToList();
 
 				var selectedProducts = userBaskets
+					.Where(ub => ub.IsDeleted != true)
 					.Select(ub =>
 					{
 						var product = _dbcontext.Products
@@ -68,7 +69,7 @@ namespace CustomerManagementSystem.Controllers
 							Pimages = productImages.Any() ? productImages : new List<string>(),
 							product.Stock,
 							product.CreaterUserId,
-							Amount = ub.Amount, // sadece bu ürüne ait miktar
+							Amount = ub.Amount,
 							TotalPrice = Math.Round((float)ub.Amount * (float)product.Price, 2) // toplam fiyat
 						};
 					})
@@ -82,56 +83,55 @@ namespace CustomerManagementSystem.Controllers
 			return Json(new { success = false, message = "Something else wrong" });
 		}
 
-
-		[HttpPost]
-		public JsonResult SetTotalAmount(int quantity, int productid)
+		[HttpPut]
+		public JsonResult UpdateBasketAmount(int productId, int amount)
 		{
-			// Kullanıcı ID’sini claim üzerinden al
 			var userIdClaim = User.FindFirst("UserId")?.Value;
+
 			if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
 			{
 				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
 			}
 
-			// Ürün var mı?
-			var product = _dbcontext.Products
-				.FirstOrDefault(x => x.Id == productid);
+			var product = _dbcontext.Products.FirstOrDefault(x => x.Id == productId);
 
 			if (product == null)
 				return Json(new { success = false, message = "Ürün bulunamadı." });
 
-			if (product.Stock < quantity)
-				return Json(new { success = false, message = "Yeterli stok yok." });
+			var userBasket = _dbcontext.UserBaskets.FirstOrDefault(x => x.ProductId == productId && x.UserId == userId && x.IsDeleted == null);
 
-			// Stoğu azalt
-			product.Stock -= quantity;
+			int currentAmountInBasket = userBasket?.Amount ?? 0;
 
-			// Kullanıcının sepetinde ürün varsa güncelle
-			var existingBasketItem = _dbcontext.UserBaskets
-				.FirstOrDefault(x => x.UserId == userId && x.ProductId == productid);
+			if ((product.Stock + currentAmountInBasket) >= amount)
 
-			if (existingBasketItem != null)
 			{
-				existingBasketItem.Amount += quantity;
-			}
-			else
-			{
-				var newBasketItem = new UserBasket
+				if (userBasket == null)
 				{
-					UserId = userId,
-					ProductId = productid,
-					Amount = quantity,
-					RecordDate = DateTime.UtcNow
-				};
+					userBasket = new UserBasket()
+					{
+						ProductId = productId,
+						Amount = amount,
+						UserId = userId,
+						RecordDate = DateTime.Now
+					};
+					product.Stock -= 1;
+					_dbcontext.UserBaskets.Add(userBasket);
+				}
+				else
+				{
+					userBasket.Amount = amount;
+					product.Stock -= 1;
+					_dbcontext.UserBaskets.Update(userBasket);
+					_dbcontext.Products.Update(product);
+				}
 
-				_dbcontext.UserBaskets.Add(newBasketItem);
+				_dbcontext.SaveChanges();
+
+				return Json(new { success = true, message = "Ürün sepetinize eklendi." });
 			}
 
-			_dbcontext.SaveChanges();
-
-			return Json(new { success = true, message = "Ürün sepetinize eklendi." });
+			return Json(new { succes = true, message = "Not enough item in stock" });
 		}
-
 
 		[HttpDelete]
 		public IActionResult DeleteProductFromBasket(int productId)

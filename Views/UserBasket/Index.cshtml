@@ -75,8 +75,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-black" href="#">
-                            <i class="fa-solid fa-headset"></i> Contact
+                        <a class="nav-link text-info" asp-area="" asp-controller="Order" asp-action="Index">
+                            <i class="fa-solid fa-list-check"></i> Orders
                         </a>
                     </li>
                 </ul>
@@ -125,12 +125,18 @@
                     </button>
                 </div>
 
+                <!-- Sepeti Onayla Butonu -->
+                <button id="confirmBasketBtn" class="btn btn-success d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-cart-arrow-down"></i> <span>Sepeti Onayla</span>
+                </button>
+
                 <!-- Toplam Fiyat -->
                 <div id="totalPriceContainer" class="fw-bold fs-5 text-success text-nowrap">
                     <!-- JavaScript ile doldurulacak -->
                 </div>
 
             </div>
+
         </div>
 
         <!-- Ürünler -->
@@ -152,6 +158,40 @@
 
         $(document).ready(function () {
             loadCategories();
+
+        $(document).on("click", ".delete-product", function () {
+            const productId = $(this).data("id");
+
+            if (confirm("Ürünü sepetten silmek istediğinize emin misiniz?")) {
+                $.ajax({
+                    url: `/UserBasket/DeleteProductFromBasket?productId=${productId}`,
+                    type: "DELETE",
+                    success: function () {
+                        alert("Ürün sepetten silindi.");
+                        loadProducts(); // Ürünler yeniden yüklensin
+                    },
+                    error: function () {
+                        alert("Silme sırasında hata oluştu.");
+                    }
+                });
+            }
+        });
+
+        $("#confirmBasketBtn").click(function()
+        {
+            $.ajax({
+                url : "/Order/SubmitOrdersAndDetails",
+                type: 'POST',
+                success: function(){
+                    alert("Your order has received");
+                    loadProducts();
+                },
+                error: function(){
+                    alert("Something went wrong");
+                }
+            })
+        }
+        );
 
             function loadCategories() {
                 $.get("/Pcategories/GetCategoryByIds")
@@ -196,11 +236,25 @@
                     // Toplam fiyatı göster
                     $("#totalPriceContainer").text("Total: $" + res.total.toFixed(2));
 
+                    // Sepet boşsa
                     if (!res.success || !res.data || res.data.length === 0) {
-                        container.html('<div class="alert alert-warning text-center">Basket is Empty</div>');
+                        container
+                            .removeClass("row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4")
+                            .addClass("d-flex justify-content-center align-items-center flex-column")
+                            .css("min-height", "300px")
+                            .html(`
+                                <div class="alert alert-warning text-center text-danger">Basket is Empty</div>
+                            `);
+
                         $("#totalPriceContainer").text(""); // sepet boşsa toplamı temizle
                         return;
                     }
+
+                    // Sepet boş değilse eski sınıfları geri yükle
+                    container
+                        .removeClass("d-flex justify-content-center align-items-center flex-column")
+                        .addClass("row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4")
+                        .css("min-height", "");
 
                     let products = res.data;
 
@@ -227,90 +281,20 @@
                                         <p class="fw-bold text-success">${p.price}$</p>
                                         <p class="text-secondary">Quantity: ${p.amount}</p>
                                         <p class="fw-bold">Subtotal: $${p.totalPrice.toFixed(2)}</p>
-                                        <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
-                                            <button class="btn btn-sm btn-outline-danger minus-btn" data-id="${p.id}"><i class="fa fa-minus"></i></button>
-                                            <span id="quantity-${p.id}" class="fw-bold">${p.amount}</span>
-                                            <button class="btn btn-sm btn-outline-success plus-btn" data-id="${p.id}" data-stock="${p.stock}"><i class="fa fa-plus"></i></button>
-                                        </div>
-                                        <button class="btn btn-sm btn-outline-primary w-100 update-basket" data-id="${p.id}"><i class="fa fa-cart-plus"></i> Update</button>
                                         <button class="btn btn-sm btn-outline-danger w-100 mt-2 delete-product" data-id="${p.id}"><i class="fa fa-trash"></i> Remove</button>
                                     </div>
                                 </div>
                             </div>
                         `);
                     }
-
-                    bindEvents();
                 })
                 .fail(err => {
                     console.error("Ürünler yüklenemedi", err);
                     $("#productContainer").html('<div class="alert alert-danger text-center">Ürünler yüklenemedi.</div>');
                     $("#totalPriceContainer").text("");
                 });
+
         }
-
-
-        function bindEvents() {
-            $(".plus-btn").click(function () {
-                const productId = $(this).data("id");
-                const stock = $(this).data("stock");
-                let quantity = parseInt($(`#quantity-${productId}`).text());
-
-                if (quantity < stock) {
-                    quantity++;
-                    $(`#quantity-${productId}`).text(quantity);
-                }
-            });
-
-            $(".minus-btn").click(function () {
-                const productId = $(this).data("id");
-                let quantity = parseInt($(`#quantity-${productId}`).text());
-
-                if (quantity > 1) {
-                    quantity--;
-                    $(`#quantity-${productId}`).text(quantity);
-                }
-            });
-
-            $(".update-basket").click(function () {
-                const productId = $(this).data("id");
-                const quantity = parseInt($(`#quantity-${productId}`).text());
-
-                $.ajax({
-                    url: "/UserBasket/SetTotalAmount",
-                    type: "POST",
-                    data: { productId, quantity },
-                    success: function () {
-                        alert("Sepet güncellendi.");
-                    },
-                    error: function () {
-                        alert("Güncelleme hatası.");
-                    }
-                });
-            });
-
-            $(".delete-product").click(function () {
-            const productId = $(this).data("id");
-            console.log(productId);
-
-            $.ajax({
-                url: `/UserBasket/DeleteProductFromBasket?productId=${productId}`,  // URL parametresi olarak gönderiyoruz
-                type: "DELETE",  // DELETE metodu ile istek
-                success: function (res) {
-                    if (res.success) {
-                        alert("Ürün sepetten çıkarıldı.");
-                        loadProducts();  // Sepeti yeniden yükle
-                    } else {
-                        alert("Ürün silinemedi: " + res.message);
-                    }
-                },
-                error: function () {
-                    alert("Ürün silme hatası.");
-                }
-            });
-        });
-        }
-
 
             $("#lowFilter").click(() => {
                 currentSortOrder = (currentSortOrder !== "asc") ? "asc" : null;

@@ -107,7 +107,7 @@ namespace CustomerManagementSystem.Controllers
 								.Select(img => img.PictureUrl)
 								.ToList(),
 							p.Stock,
-							p.CreaterUserId
+							p.CreaterUserId,
 						});
 					if (categoryid != null)
 					{
@@ -141,7 +141,8 @@ namespace CustomerManagementSystem.Controllers
 								.Select(img => img.PictureUrl)
 								.ToList(),
 							p.Stock,
-							p.CreaterUserId
+							p.CreaterUserId,
+							BasketCount = _dbContext.UserBaskets.Where(x => x.ProductId == p.Id).Sum(x => x.Amount)
 						});
 					if (categoryid != 0)
 					{

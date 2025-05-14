@@ -60,9 +60,9 @@
                             <i class="fa-solid fa-cart-shopping"></i> Shopping Basket
                         </a>
                     </li>
-                    <li class="nav-item text-secondary">
-                        <a class="nav-link text-black" href="#">
-                            <i class="fa-solid fa-headset"></i> Contact
+                    <li class="nav-item">
+                        <a class="nav-link text-info" asp-area="" asp-controller="Order" asp-action="Index">
+                            <i class="fa-solid fa-list-check"></i> Orders
                         </a>
                     </li>
                 </ul>
@@ -119,6 +119,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="~/bootstrap/dist/js/bootstrap.min.js"></script>
 	<script src="~/font-awesome/all.min.js"></script>
+	<script src="~/common.js"></script>
     <script>
         let selectedCategoryId = @ViewBag.categoryId ?? 0;
         let currentSortOrder = null;
@@ -172,60 +173,97 @@
                 }
             });
 
-            // Ürünleri yükle
-            function loadProducts() {
-                $.ajax({
-                    url: "/ProductList/GetAllProducts",
-                    type: "GET",
-                    data: { categoryId: selectedCategoryId },
-                    dataType: "json",
-                    success: function (response) {
-                        const container = $("#productContainer");
+                 function loadProducts() {
+            $.ajax({
+                url: "/ProductList/GetAllProducts",
+                type: "GET",
+                data: { categoryId: selectedCategoryId },
+                dataType: "json",
+                success: function (response) {
+                    console.log("response", response)
 
-                        if (!response.success || !response.data || response.data.length === 0) {
-                            container.html(`<p class="text-center">Ürün bulunamadı.</p>`);
-                            return;
-                        }
+                    const container = $("#productContainer");
 
-                        let products = response.data;
+                    if (!response.success || !response.data || response.data.length === 0) {
+                        container.html(`<p class="text-center">Ürün bulunamadı.</p>`);
+                        return;
+                    }
 
-                        // Sıralama uygula
-                        if (currentSortOrder === "asc") {
-                            products.sort((a, b) => a.price - b.price);
-                        } else if (currentSortOrder === "desc") {
-                            products.sort((a, b) => b.price - a.price);
-                        }
+                    // 🔽 Gelen ürünler
+                    let products = response.data;
 
-                        // Ürün kartlarını oluştur
-                        let html = "";
-                        products.forEach(item => {
-                            const image = item.pimages?.length > 0 ? item.pimages[0] : "/images/no-image.png";
-                            html += `
-                                <div class="col-md-4 mb-4">
-                                    <div class="card shadow-sm border-0 h-100 hover-shadow transition" style="cursor:pointer;">
-                                        <img src="${image}" class="card-img-top img-fluid product-image">
-                                        <div class="card-body text-center d-flex flex-column align-items-center">
-                                            <h5 class="card-title text-primary">${item.explanation}</h5>
-                                            <p class="card-text text-muted">${item.description}</p>
-                                            <span class="fw-bold text-success">${item.price}$</span>
-                                            <div id='amountDiv-${item.id}'>
-                                                    <button class='btn btn-primary' onClick="addtobasket(${item.id}, '${item.explanation}', ${item.stock}, ${item.price})">
-                                                <i class="fa-solid fa-cart-arrow-down"></i> Add Basket
-                                                </button>
-                                            </div>
-                                        </div>
+                    // 🔄 Sıralama işlemi
+                    if (currentSortOrder === "asc") {
+                        products.sort((a, b) => a.price - b.price);
+                    }
+                    if (currentSortOrder === "desc") {
+                        products.sort((a, b) => b.price - a.price);
+                    }
+
+                    // 🔨 HTML oluştur
+                    let html = "";
+                    products.forEach(item => {
+                        const image = item.pimages?.length > 0 ? item.pimages[0] : "/images/no-image.png";
+                        const id = uuidv4();
+
+                        let buttonHtml = "";
+
+                        if (item.basketCount > 0) {
+                            buttonHtml = `
+                                <div class="d-none flex-column align-items-center" id="addBasketDiv${id}">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <button class='btn btn-primary' onClick="addBasket('${id}')">
+                                            <i class="fa-solid fa-cart-arrow-down"></i> Add Basket
+                                        </button>
                                     </div>
                                 </div>
-                            `;
-                        });
+                                <div class="d-flex flex-column align-items-center" id="div${id}">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <button class="btn btn-sm btn-outline-danger" onclick="updateBasket(${item.id}, '${id}', false)">-</button>
+                                        <input id="${id}" type="number" min="1" max="2" class="form-control form-control-sm text-center fw-bold" style="width: 70px;" value=${item.basketCount} />
+                                        <button class="btn btn-sm btn-outline-success" onclick="updateBasket(${item.id}, '${id}', true)">+</button>
+                                    </div>
+                                </div>`;
+                        } else {
+                            buttonHtml = `
+                                <div class="d-flex flex-column align-items-center" id="addBasketDiv${id}">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <button class='btn btn-primary' onClick="addBasket('${id}')">
+                                            <i class="fa-solid fa-cart-arrow-down"></i> Add Basket
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="d-none flex-column align-items-center" id="div${id}">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <button class="btn btn-sm btn-outline-danger" onclick="updateBasket(${item.id}, '${id}', false)">-</button>
+                                        <input id="${id}" type="number" min="1" max="2" class="form-control form-control-sm text-center fw-bold" style="width: 70px;" value=${item.basketCount} />
+                                        <button class="btn btn-sm btn-outline-success" onclick="updateBasket(${item.id}, '${id}', true)">+</button>
+                                    </div>
+                                </div>`;
+                        }
 
-                        container.html(html);
-                    },
-                    error: function () {
-                        $("#productContainer").html(`<p class="text-danger text-center">Ürünler yüklenemedi.</p>`);
-                    }
-                });
-            }
+                        html += `
+                            <div class="col-md-4 mb-4">
+                                <div class="card shadow-sm border-0 h-100 hover-shadow transition" style="cursor:pointer;">
+                                    <img src="${image}" class="card-img-top img-fluid product-image">
+                                    <div class="card-body text-center d-flex flex-column align-items-center">
+                                        <h5 class="card-title text-primary">${item.explanation}</h5>
+                                        <p class="card-text text-muted">${item.description}</p>
+                                        <span class="fw-bold text-success">${item.price}$</span>
+                                        ${buttonHtml}
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+
+                    container.html(html);
+                },
+                error: function () {
+                    $("#productContainer").html(`<p class="text-danger text-center">Ürünler yüklenemedi.</p>`);
+                }
+            });
+        }
+
 
             // Fiyat filtreleme
             $("#highFilter").click(function () {
@@ -253,68 +291,49 @@
             });
         });
 
-            function addtobasket(productId, explanation, stock, price) {
-                const amountDiv = $(`#amountDiv-${productId}`);
-                amountDiv.empty();
 
-                let quantity = 1;
+        function addBasket(id){
+            $("#addBasketDiv" + id).addClass("d-none").removeClass("d-flex");
+            $("#div" + id).removeClass("d-none").addClass("d-flex");
+        }
 
-                const updateTotal = () => {
-                    quantityInput.text(quantity);
-                };
+        function updateBasket(productId, inputId, isIncrease) {
+            let amount = parseInt($("#" + inputId).val());
 
-                const container = $("<div>").addClass("d-flex flex-column align-items-center");
-
-                const controlRow = $("<div>").addClass("d-flex align-items-center gap-2 mb-1");
-
-                const minusBtn = $("<button>")
-                    .addClass("btn btn-sm btn-outline-danger")
-                    .html("<i class='fa fa-minus'></i>")
-                    .click(() => {
-                        if (quantity > 1) {
-                            quantity--;
-                            updateTotal();
-                        }
-                    });
-
-                const quantityInput = $("<span>")
-                    .addClass("px-3 fw-bold")
-                    .text(quantity);
-
-                const plusBtn = $("<button>")
-                    .addClass("btn btn-sm btn-outline-success")
-                    .html("<i class='fa fa-plus'></i>")
-                    .click(() => {
-                        if (quantity < stock) {
-                            quantity++;
-                            updateTotal();
-                        }
-                    });
-
-                const purchaseBtn = $("<a>")
-                    .addClass("btn btn-sm btn-outline-primary mt-2")
-                        .html("<i class='fa-solid fa-cart-plus'></i> Add To Basket")
-                    .click(function (e) {
-                        e.preventDefault();
-                        $.ajax({
-                            url: "/UserBasket/SetTotalAmount",
-                            type: "POST",
-                            data: { quantity: quantity, productId: productId },
-                            success: function () {
-                                alert("Added to Basket successfully!");
-                                location.reload();
-                            },
-                            error: function () {
-                                alert("Unexpected Error!");
-                                location.reload();
-                            }
-                        });
-                    });
-
-                controlRow.append(minusBtn, quantityInput, plusBtn);
-                container.append(controlRow, purchaseBtn);
-                amountDiv.append(container);
+            if (isIncrease) {
+                amount += 1;
+            } else {
+                amount -= 1;
             }
+
+            // Eğer sıfır veya altına düştüyse kaldır
+            if (amount <= 0) {
+                $("#" + inputId).val(0);
+                $("#div" + inputId).addClass("d-none").removeClass("d-flex");
+                $("#addBasketDiv" + inputId).removeClass("d-none").addClass("d-flex");
+                return;
+            }
+
+            // Yeni miktarı input'a yansıt
+            $("#" + inputId).val(amount);
+
+            // AJAX isteği — şimdi amount hazır
+            $.ajax({
+                url: "/UserBasket/UpdateBasketAmount",
+                type: "PUT",
+                data: {
+                    productId: productId,
+                    amount: amount
+                },
+                success: function () {
+                    console.log("Miktar güncellendi:", amount);
+                },
+                error: function () {
+                    alert("Beklenmeyen bir hata oluştu.");
+                }
+            });
+        }
+
 
 
     </script>

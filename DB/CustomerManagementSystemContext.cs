@@ -17,6 +17,12 @@ public partial class CustomerManagementSystemContext : DbContext
 
     public virtual DbSet<Customer> Customers { get; set; }
 
+    public virtual DbSet<Order> Orders { get; set; }
+
+    public virtual DbSet<OrderStatus> OrderStatuses { get; set; }
+
+    public virtual DbSet<OrdersDetail> OrdersDetails { get; set; }
+
     public virtual DbSet<Pcategory> Pcategories { get; set; }
 
     public virtual DbSet<Pimage> Pimages { get; set; }
@@ -52,6 +58,27 @@ public partial class CustomerManagementSystemContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.ServiceArea).HasMaxLength(50);
             entity.Property(e => e.Tel).HasMaxLength(15);
+        });
+
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.Property(e => e.Date).HasColumnType("datetime");
+            entity.Property(e => e.RecordDate).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<OrderStatus>(entity =>
+        {
+            entity.ToTable("OrderStatus");
+
+            entity.Property(e => e.OrderStatus1)
+                .HasMaxLength(50)
+                .HasColumnName("OrderStatus");
+        });
+
+        modelBuilder.Entity<OrdersDetail>(entity =>
+        {
+            entity.Property(e => e.Date).HasColumnType("datetime");
+            entity.Property(e => e.RecordDate).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<Pcategory>(entity =>
