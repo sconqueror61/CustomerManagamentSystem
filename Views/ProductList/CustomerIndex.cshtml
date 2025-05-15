@@ -173,7 +173,7 @@
                 }
             });
 
-                 function loadProducts() {
+            function loadProducts() {
             $.ajax({
                 url: "/ProductList/GetAllProducts",
                 type: "GET",
@@ -189,10 +189,8 @@
                         return;
                     }
 
-                    // 🔽 Gelen ürünler
                     let products = response.data;
 
-                    // 🔄 Sıralama işlemi
                     if (currentSortOrder === "asc") {
                         products.sort((a, b) => a.price - b.price);
                     }
@@ -200,7 +198,6 @@
                         products.sort((a, b) => b.price - a.price);
                     }
 
-                    // 🔨 HTML oluştur
                     let html = "";
                     products.forEach(item => {
                         const image = item.pimages?.length > 0 ? item.pimages[0] : "/images/no-image.png";
@@ -264,8 +261,6 @@
             });
         }
 
-
-            // Fiyat filtreleme
             $("#highFilter").click(function () {
                 if (currentSortOrder !== "desc") {
                     currentSortOrder = "desc";
@@ -306,7 +301,6 @@
                 amount -= 1;
             }
 
-            // Eğer sıfır veya altına düştüyse kaldır
             if (amount <= 0) {
                 $("#" + inputId).val(0);
                 $("#div" + inputId).addClass("d-none").removeClass("d-flex");
@@ -314,10 +308,8 @@
                 return;
             }
 
-            // Yeni miktarı input'a yansıt
             $("#" + inputId).val(amount);
 
-            // AJAX isteği — şimdi amount hazır
             $.ajax({
                 url: "/UserBasket/UpdateBasketAmount",
                 type: "PUT",
@@ -332,6 +324,7 @@
                     alert("Beklenmeyen bir hata oluştu.");
                 }
             });
+
         }
 
 

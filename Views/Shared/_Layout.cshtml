@@ -24,7 +24,6 @@
                         <ul class="dropdown-menu" aria-labelledby="welcomeDropdown">
                             <li><a class="dropdown-item" asp-area="" asp-controller="Starting" asp-action="Index"><i class="fa-solid fa-house-user"></i> Welcome</a></li>
                             <li><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Index"><i class="fa-solid fa-people-group"></i> Customers</a></li>
-                            <li><a class="dropdown-item" href="#">AAAAAAAAAA</a></li>
                             <li><hr class="dropdown-divider" /></li>
                             <li><a class="dropdown-item" href="#">Separated link</a></li>
                         </ul>
@@ -45,6 +44,10 @@
                     <!-- Services -->
                     <a class="navbar-brand text-warning" asp-area="" asp-controller="Service" asp-action="Index">
                         <i class="fa-solid fa-truck-fast me-2"></i>Services
+                    </a>
+
+                    <a class="navbar-brand text-info" asp-area="" asp-controller="OrdersArrived" asp-action="Index">
+                        <i class="fa-solid fa-list-check"></i> Orders
                     </a>
                 </div>
 

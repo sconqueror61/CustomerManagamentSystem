@@ -6,7 +6,6 @@
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
-    <title>@ViewData["Title"] - Products</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -135,21 +134,25 @@
                 }
             });
 
-            // Kategorileri çek
-            $.ajax({
-                url: '/Pcategories/GetCategoryByIds',
-                type: 'GET',
-                success: function (data) {
-                    let select = $('#categorySelect');
-                    select.empty().append('<option disabled selected value="">Select a Category</option>');
-                    $.each(data, function (index, item) {
-                        select.append(`<option value="${item.id}">${item.categories}</option>`);
-                    });
-                },
-                error: function () {
-                    alert('Kategoriler yüklenemedi.');
-                }
-            });
+        $.ajax({
+            url: '/Pcategories/GetCategoryByIds',
+            type: 'GET',
+            success: function (data) {
+                console.log("Gelen data:", data);
+
+                let select = $('#categorySelect');
+                select.empty().append('<option disabled selected value="">Select a Category</option>');
+
+                // Her bir kategoriyi select listesine ekle
+                $.each(data.data, function (index, item) {
+                    console.log("Item:", item);
+                    select.append(`<option value="${item.id}">${item.categories}</option>`);
+                });
+            },
+            error: function () {
+                alert('Kategoriler yüklenemedi.');
+            }
+        });
 
         $("#Up_document").on('change', function () {
             var image_holder = $('#uploadedImages');

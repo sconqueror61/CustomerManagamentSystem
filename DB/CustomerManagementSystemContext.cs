@@ -23,6 +23,8 @@ public partial class CustomerManagementSystemContext : DbContext
 
     public virtual DbSet<OrdersDetail> OrdersDetails { get; set; }
 
+    public virtual DbSet<OrdersHistory> OrdersHistories { get; set; }
+
     public virtual DbSet<Pcategory> Pcategories { get; set; }
 
     public virtual DbSet<Pimage> Pimages { get; set; }
@@ -79,6 +81,15 @@ public partial class CustomerManagementSystemContext : DbContext
         {
             entity.Property(e => e.Date).HasColumnType("datetime");
             entity.Property(e => e.RecordDate).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<OrdersHistory>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("OrdersHistory");
+
+            entity.Property(e => e.Date).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<Pcategory>(entity =>

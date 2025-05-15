@@ -98,7 +98,7 @@ namespace CustomerManagementSystem.Controllers
 			if (product == null)
 				return Json(new { success = false, message = "Ürün bulunamadı." });
 
-			var userBasket = _dbcontext.UserBaskets.FirstOrDefault(x => x.ProductId == productId && x.UserId == userId && x.IsDeleted == null);
+			var userBasket = _dbcontext.UserBaskets.FirstOrDefault(x => x.ProductId == productId && x.UserId == userId && x.IsDeleted == false);
 
 			int currentAmountInBasket = userBasket?.Amount ?? 0;
 

@@ -1,4 +1,5 @@
 ﻿using CustomerManagementSystem.DB;
+using CustomerManagementSystem.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CustomerManagementSystem.Controllers
@@ -94,87 +95,55 @@ namespace CustomerManagementSystem.Controllers
 		public IActionResult SubmitOrdersAndDetails()
 		{
 			var userBasket = _context.UserBaskets
-				.Where(x => x.UserId == UserId)
-				.Select(x => new
-				{
-					x.UserId,
-					x.Id,
-					x.ProductId,
-					x.RecordDate,
-					x.Amount,
-					x.IsDeleted
-				}).ToList();
+				.Where(x => x.UserId == UserId && x.IsDeleted == false)
+				.ToList();
 
-			var productIds = userBasket.Select(x => x.ProductId).ToList();
+			var productIds = userBasket
+				.Select(x => x.ProductId)
+				.ToList();
 
 			var orderedProducts = _context.Products
 				.Where(p => productIds.Contains(p.Id))
 				.ToList();
 
-			float totalPrice = 0;
-
-			foreach (var basketItem in userBasket)
-			{
-				var product = orderedProducts.FirstOrDefault(p => p.Id == basketItem.ProductId);
-
-				var amount = basketItem.Amount;
-				float damount = (float)amount;
-				if (product != null)
-				{
-					totalPrice += (float)((product.Price) * damount);
-				}
-			}
+			double totalPrice = orderedProducts.Sum(x => x.Price);
+			int amount = userBasket.Sum(x => x.Amount.Value);
 
 			var order = new Order
 			{
 				UserId = UserId,
-				TotalAmount = userBasket.Sum(x => x.Amount),
+				TotalAmount = amount,
 				TotalPrice = totalPrice,
 				Date = DateTime.Now,
-				StatusId = 1,
-				IsDeleted = false,
-				RecordDate = userBasket.FirstOrDefault().RecordDate
+				StatusId = (int)OrderStatusEnum.OrderReceived,
 			};
 
 			_context.Orders.Add(order);
+
 			_context.SaveChanges();
 
 			foreach (var item in userBasket)
 			{
-				var product = orderedProducts.FirstOrDefault(p => p.Id == item.ProductId && item.IsDeleted == null);
-				if (product != null)
+				var product = orderedProducts.First(p => p.Id == item.ProductId && item.IsDeleted == false);
+
+				_context.OrdersDetails.Add(new OrdersDetail
 				{
-					_context.OrdersDetails.Add(new OrdersDetail
-					{
-						OrderId = order.Id,
-						ProductId = product.Id,
-						Amount = item.Amount,
-						Price = product.Price,
-						UserId = item.UserId,
-						StatusId = 1,
-						IsDeleted = false,
-						Date = DateTime.Now,
-						RecordDate = item.RecordDate
-					});
-				}
-			}
-			_context.SaveChanges(); // OrdersDetail kaydedildi
-
-			// Sepeti pasif et
-			var userBasketEntities = _context.UserBaskets
-				.Where(x => x.UserId == UserId)
-				.ToList();
-
-			foreach (var item in userBasketEntities)
-			{
-				item.IsDeleted = true;
+					OrderId = order.Id,
+					ProductId = product.Id,
+					Amount = item.Amount,
+					Price = product.Price,
+					UserId = item.UserId,
+					StatusId = (int)OrderStatusEnum.OrderReceived,
+					Date = DateTime.Now
+				});
 			}
 
-			_context.SaveChanges(); // IsDeleted = true yansıt
+			userBasket.ForEach(x => x.IsDeleted = true);
+
+			_context.SaveChanges();
 
 			return Json(new { succes = true, message = "Your order has received" });
 		}
-
 
 		public IActionResult Index()
 		{

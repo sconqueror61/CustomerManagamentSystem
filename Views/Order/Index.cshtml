@@ -115,14 +115,13 @@
                 }
 
                 const orders = ordersRes[0].data;
-                console.log(orders)
                 const orderDetails = detailsRes[0].data;
                 const statusMap = {};
-
+                console.log(statusRes);
                 statusRes[0].data.forEach(st => {
-                    statusMap[st.Id] = st.OrderStatus1;
+                    statusMap[st.id] = st.orderStatus1;
                 });
-
+                console.log(statusMap);
                 renderOrders(orders, orderDetails, statusMap);
             });
         }
@@ -136,8 +135,9 @@
             }
 
             orders.forEach((order, index) => {
+                console.log(order);
                 const details = orderDetails.filter(d => d.orderId === order.id);
-                const statusText = statusMap[order.StatusId] || "Bilinmiyor";
+                const statusText = statusMap[order.statusId] || "Unknown";
                 const collapseId = `collapse${order.id}`;
                 const headingId = `heading${order.id}`;
 
