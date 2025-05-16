@@ -10,6 +10,7 @@ namespace CustomerManagementSystem.Controllers
 		public List<Order> Orders { get; set; } = new List<Order>();
 		public List<OrdersDetail> OrdersDetails { get; set; } = new List<OrdersDetail>();
 		public List<OrderStatus> OrderStatuses { get; set; } = new List<OrderStatus>();
+		public List<OrdersHistory> OrdersHistories { get; set; } = new List<OrdersHistory>();
 
 		private int? UserId
 		{
@@ -62,6 +63,7 @@ namespace CustomerManagementSystem.Controllers
 					x.Date,
 					x.IsDeleted,
 					x.RecordDate,
+					x.SupplierId,
 					Pimages = _context.Pimages
 						.Where(y => y.ProductId == x.ProductId)
 						.Select(y => new
@@ -71,7 +73,7 @@ namespace CustomerManagementSystem.Controllers
 							y.Id,
 							y.CreaterUserId
 						})
-						.ToList() // ⬅️ BURASI EKLENDİ
+						.ToList(),
 				}).ToList();
 
 			return Json(new { success = true, data = receivedOrdersDetails });
@@ -94,56 +96,96 @@ namespace CustomerManagementSystem.Controllers
 		[HttpPost]
 		public IActionResult SubmitOrdersAndDetails()
 		{
+			if (UserId == null)
+			{
+				return Json(new { success = false, message = "User not found." });
+			}
+
+			// Sepetteki ürünleri al
 			var userBasket = _context.UserBaskets
 				.Where(x => x.UserId == UserId && x.IsDeleted == false)
 				.ToList();
 
-			var productIds = userBasket
-				.Select(x => x.ProductId)
-				.ToList();
+			if (!userBasket.Any())
+			{
+				return Json(new { success = false, message = "Sepetiniz boş." });
+			}
 
+			var productIds = userBasket.Select(x => x.ProductId).ToList();
+
+			// Ürün detaylarını al
 			var orderedProducts = _context.Products
 				.Where(p => productIds.Contains(p.Id))
 				.ToList();
 
-			double totalPrice = orderedProducts.Sum(x => x.Price);
-			int amount = userBasket.Sum(x => x.Amount.Value);
+			// Toplam fiyat ve miktar hesapla
+			double totalPrice = userBasket.Sum(x =>
+			{
+				var product = orderedProducts.FirstOrDefault(p => p.Id == x.ProductId);
+				return (product != null) ? (double)(x.Amount ?? 0) * (double)product.Price : 0;
+			});
 
+			int totalAmount = userBasket.Sum(x => x.Amount ?? 0);
+
+			// Siparişi oluştur
 			var order = new Order
 			{
 				UserId = UserId,
-				TotalAmount = amount,
+				TotalAmount = totalAmount,
 				TotalPrice = totalPrice,
 				Date = DateTime.Now,
 				StatusId = (int)OrderStatusEnum.OrderReceived,
+				RecordDate = DateTime.Now
 			};
 
 			_context.Orders.Add(order);
+			_context.SaveChanges(); // Siparişi kaydettik, artık order.Id var
 
-			_context.SaveChanges();
+			// Her sepet ürünü için OrdersDetail oluştur
+			var orderDetails = new List<OrdersDetail>();
 
 			foreach (var item in userBasket)
 			{
-				var product = orderedProducts.First(p => p.Id == item.ProductId && item.IsDeleted == false);
+				var product = orderedProducts.FirstOrDefault(p => p.Id == item.ProductId);
+				if (product == null) continue;
 
-				_context.OrdersDetails.Add(new OrdersDetail
+				var detail = new OrdersDetail
 				{
 					OrderId = order.Id,
+					SupplierId = product.CreaterUserId,
 					ProductId = product.Id,
-					Amount = item.Amount,
+					Amount = item.Amount ?? 0,
 					Price = product.Price,
 					UserId = item.UserId,
 					StatusId = (int)OrderStatusEnum.OrderReceived,
-					Date = DateTime.Now
-				});
+					Date = DateTime.Now,
+					RecordDate = DateTime.Now
+				};
+
+				orderDetails.Add(detail);
 			}
 
+			_context.OrdersDetails.AddRange(orderDetails);
+
+			// Sepettekileri pasif et
 			userBasket.ForEach(x => x.IsDeleted = true);
 
-			_context.SaveChanges();
+			_context.SaveChanges(); // OrdersDetails ve basket güncellemesi kaydedildi
 
-			return Json(new { succes = true, message = "Your order has received" });
+			// Her OrdersDetail için OrdersHistory oluştur
+			var ordersHistories = orderDetails.Select(detail => new OrdersHistory
+			{
+				Date = DateTime.Now,
+				OrderDetailId = detail.Id,
+				StatusId = (int)OrderStatusEnum.OrderReceived
+			}).ToList();
+
+			_context.OrdersHistories.AddRange(ordersHistories);
+			_context.SaveChanges(); // OrdersHistories kaydedildi
+
+			return Json(new { success = true, message = "Your order has been received." });
 		}
+
 
 		public IActionResult Index()
 		{

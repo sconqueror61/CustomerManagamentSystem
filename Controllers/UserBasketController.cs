@@ -98,40 +98,57 @@ namespace CustomerManagementSystem.Controllers
 			if (product == null)
 				return Json(new { success = false, message = "Ürün bulunamadı." });
 
-			var userBasket = _dbcontext.UserBaskets.FirstOrDefault(x => x.ProductId == productId && x.UserId == userId && x.IsDeleted == false);
+			var userBasket = _dbcontext.UserBaskets
+				.FirstOrDefault(x => x.ProductId == productId && x.UserId == userId && x.IsDeleted != true);
 
-			int currentAmountInBasket = userBasket?.Amount ?? 0;
-
-			if ((product.Stock + currentAmountInBasket) >= amount)
-
+			if (userBasket == null)
 			{
-				if (userBasket == null)
+				// Ürün sepette yoksa, yeni kayıt oluştur
+				if (amount > product.Stock)
+					return Json(new { success = false, message = "Yeterli stok yok." });
+
+				userBasket = new UserBasket()
 				{
-					userBasket = new UserBasket()
-					{
-						ProductId = productId,
-						Amount = amount,
-						UserId = userId,
-						RecordDate = DateTime.Now
-					};
-					product.Stock -= 1;
-					_dbcontext.UserBaskets.Add(userBasket);
+					ProductId = productId,
+					Amount = amount,
+					UserId = userId,
+					RecordDate = DateTime.Now,
+					IsDeleted = false
+				};
+
+				product.Stock -= amount;
+				_dbcontext.UserBaskets.Add(userBasket);
+			}
+			else
+			{
+				// Ürün sepette varsa, sadece miktar güncellemesi yap
+				int difference = amount - (userBasket.Amount ?? 0);
+
+				if (difference > 0)
+				{
+					// Kullanıcı sepetteki miktarı artırmak istiyor
+					if (product.Stock < difference)
+						return Json(new { success = false, message = "Stok yetersiz." });
+
+					product.Stock -= difference;
 				}
-				else
+				else if (difference < 0)
 				{
-					userBasket.Amount = amount;
-					product.Stock -= 1;
-					_dbcontext.UserBaskets.Update(userBasket);
-					_dbcontext.Products.Update(product);
+					// Kullanıcı sepetteki miktarı azaltmak istiyor
+					product.Stock += Math.Abs(difference);
 				}
 
-				_dbcontext.SaveChanges();
-
-				return Json(new { success = true, message = "Ürün sepetinize eklendi." });
+				userBasket.Amount = amount;
+				userBasket.RecordDate = DateTime.Now;
+				_dbcontext.UserBaskets.Update(userBasket);
 			}
 
-			return Json(new { succes = true, message = "Not enough item in stock" });
+			_dbcontext.Products.Update(product);
+			_dbcontext.SaveChanges();
+
+			return Json(new { success = true, message = "Sepet güncellendi." });
 		}
+
 
 		[HttpDelete]
 		public IActionResult DeleteProductFromBasket(int productId)
@@ -142,7 +159,6 @@ namespace CustomerManagementSystem.Controllers
 				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
 			}
 
-			// Kullanıcının sepetinden ilgili ürünün kaydını bul
 			var basketProduct = _dbcontext.UserBaskets
 				.FirstOrDefault(x => x.UserId == userId && x.ProductId == productId);
 

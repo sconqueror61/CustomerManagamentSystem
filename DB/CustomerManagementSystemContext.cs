@@ -85,9 +85,7 @@ public partial class CustomerManagementSystemContext : DbContext
 
         modelBuilder.Entity<OrdersHistory>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("OrdersHistory");
+            entity.ToTable("OrdersHistory");
 
             entity.Property(e => e.Date).HasColumnType("datetime");
         });
