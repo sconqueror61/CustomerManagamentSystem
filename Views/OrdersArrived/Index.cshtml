@@ -15,35 +15,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.dataTables.min.css" />
     <script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
     <style>
-        .btndot {
-            width: 28px;
-            height: 28px;
-            border: none;
-            background-color: transparent;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s ease;
-        }
 
-            .btndot:hover {
-                background-color: #0d6efd; /* Bootstrap primary */
-                color: white;
-            }
-
-            .btndot svg {
-                pointer-events: none;
-            }
-
-        .dropdown-menudot {
-            min-width: 100px !important;
-        }
-
-        .dropdown-itemdot {
-            padding: 0px 5px !important;
-            font-size: 12px !important;
-        }
     </style>
 
 </head>
@@ -80,8 +52,9 @@
                 <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
             <ul class="dropdown-menu">
-                <li style="background: #0d6efd; "><a class="dropdown-item text-white" href="#"><i class="fa-solid fa-info --bg-primary" ></i> Informations</a></li>
-                               <li><a class="dropdown-item  bg-danger" href="#" style="color:white;"><i class="fa-solid fa-thrash"></i> Delete</a></li>
+                <li><a class="dropdown-item bg-primary text-light" href="#"><i class="fa-solid fa-info --bg-primary" ></i> Informations</a></li>
+                 <li><a class="dropdown-item bg-warning text-light" href="#"><i class="fa-solid fa-angles-right"></i> Next Status</a></li>
+                               <li><a class="dropdown-item  bg-danger text-light" href="#""><i class="fa-solid fa-thrash"></i> Delete</a></li>
 
             </ul>
         </div>
