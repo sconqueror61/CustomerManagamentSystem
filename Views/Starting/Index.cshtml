@@ -90,32 +90,39 @@
 </head>
 <body>
     <div class="container py-5">
-        <div class="heading" data-aos="fade-down">
-            WELCOME
+        <div class="text-center mb-5" data-aos="fade-down">
+            <h2 class="fw-bold">WELCOME</h2>
+            <a class="btn btn-success btn-lg mt-3" asp-action="CompletedOrdersIndex" asp-controller="OrdersArrived">
+                <i class="fa-solid fa-truck-arrow-right"></i> Completed Orders
+            </a>
         </div>
 
         <div class="row justify-content-center">
             @foreach (var card in cards)
             {
-                <div class="col-md-4 mb-4" data-aos="fade-up">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="col-md-6 col-lg-4 mb-4" data-aos="fade-up">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 hover-shadow transition">
+                        <div class="card-header bg-primary text-white rounded-top-4 d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">@card.Title</h5>
                             @if (card.ShowAddButton)
                             {
-                                <a class="btn btn-warning btn-sm" href="@card.AddButtonUrl">
-                                    <i class="fas fa-plus"></i> @card.AddButtonText
+                                <a class="btn btn-warning btn-sm text-danger fw-semibold" href="@card.AddButtonUrl">
+                                    <i class="fas fa-plus me-1"></i> @card.AddButtonText
                                 </a>
                             }
                         </div>
                         <div class="card-body">
-                            <h6>Quick Links</h6>
-                            @foreach (var link in card.Links)
-                            {
-                                <div>
-                                    <a href="@link.Url"><i class="fas fa-chevron-right me-2"></i>@link.Text</a>
-                                </div>
-                            }
+                            <h6 class="fw-semibold mb-3 text-secondary">Quick Links</h6>
+                            <ul class="list-unstyled">
+                                @foreach (var link in card.Links)
+                                {
+                                    <li class="mb-2">
+                                        <a href="@link.Url" class="text-decoration-none text-dark d-flex align-items-center link-hover">
+                                            <i class="fas fa-chevron-right me-2 text-muted"></i> @link.Text
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
                         </div>
                     </div>
                 </div>

@@ -80,18 +80,32 @@ namespace CustomerManagementSystem.Controllers
 		}
 
 		[HttpGet]
-		public JsonResult GetOrdersStatus()
+		public JsonResult GetOrdersStatus(int statusId)
 		{
-			var OrderStatus = _context.OrderStatuses
-				.Select(x => new
-				{
-					x.OrderStatus1,
-					x.Id
-				}).ToList();
+			if (statusId == 0)
+			{
+				var orderStatusList = _context.OrderStatuses
+					.Select(x => new
+					{
+						x.OrderStatus1,
+						x.Id
+					}).ToList();
 
-			return Json(new { success = true, data = OrderStatus });
+				return Json(new { success = true, data = orderStatusList });
+			}
+
+			var selectedStatus = _context.OrderStatuses
+				.Where(x => x.Id == statusId)
+				.Select(x => x.OrderStatus1)
+				.FirstOrDefault(); // İlk bulamazsa null döner
+
+			if (selectedStatus == null)
+			{
+				return Json(new { success = false, data = "Not found" });
+			}
+
+			return Json(new { success = true, data = selectedStatus });
 		}
-
 
 		[HttpPost]
 		public IActionResult SubmitOrdersAndDetails()
@@ -101,7 +115,6 @@ namespace CustomerManagementSystem.Controllers
 				return Json(new { success = false, message = "User not found." });
 			}
 
-			// Sepetteki ürünleri al
 			var userBasket = _context.UserBaskets
 				.Where(x => x.UserId == UserId && x.IsDeleted == false)
 				.ToList();
@@ -113,12 +126,10 @@ namespace CustomerManagementSystem.Controllers
 
 			var productIds = userBasket.Select(x => x.ProductId).ToList();
 
-			// Ürün detaylarını al
 			var orderedProducts = _context.Products
 				.Where(p => productIds.Contains(p.Id))
 				.ToList();
 
-			// Toplam fiyat ve miktar hesapla
 			double totalPrice = userBasket.Sum(x =>
 			{
 				var product = orderedProducts.FirstOrDefault(p => p.Id == x.ProductId);
@@ -127,7 +138,6 @@ namespace CustomerManagementSystem.Controllers
 
 			int totalAmount = userBasket.Sum(x => x.Amount ?? 0);
 
-			// Siparişi oluştur
 			var order = new Order
 			{
 				UserId = UserId,
@@ -139,9 +149,8 @@ namespace CustomerManagementSystem.Controllers
 			};
 
 			_context.Orders.Add(order);
-			_context.SaveChanges(); // Siparişi kaydettik, artık order.Id var
+			_context.SaveChanges();
 
-			// Her sepet ürünü için OrdersDetail oluştur
 			var orderDetails = new List<OrdersDetail>();
 
 			foreach (var item in userBasket)
@@ -167,12 +176,10 @@ namespace CustomerManagementSystem.Controllers
 
 			_context.OrdersDetails.AddRange(orderDetails);
 
-			// Sepettekileri pasif et
 			userBasket.ForEach(x => x.IsDeleted = true);
 
-			_context.SaveChanges(); // OrdersDetails ve basket güncellemesi kaydedildi
+			_context.SaveChanges();
 
-			// Her OrdersDetail için OrdersHistory oluştur
 			var ordersHistories = orderDetails.Select(detail => new OrdersHistory
 			{
 				Date = DateTime.Now,
@@ -181,7 +188,7 @@ namespace CustomerManagementSystem.Controllers
 			}).ToList();
 
 			_context.OrdersHistories.AddRange(ordersHistories);
-			_context.SaveChanges(); // OrdersHistories kaydedildi
+			_context.SaveChanges();
 
 			return Json(new { success = true, message = "Your order has been received." });
 		}

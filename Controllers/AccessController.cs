@@ -15,7 +15,6 @@ namespace CustomerManagementSystem.Controllers
 			_dbContext = context;
 		}
 
-
 		[HttpGet]
 		public IActionResult Register()
 		{
@@ -25,7 +24,6 @@ namespace CustomerManagementSystem.Controllers
 		[HttpGet]
 		public IActionResult Login()
 		{
-			// Kullanıcı zaten giriş yaptıysa user tipine göre yönlendir
 			if (User.Identity != null && User.Identity.IsAuthenticated)
 			{
 				var userTypeId = User.FindFirst("UserTypeId")?.Value;

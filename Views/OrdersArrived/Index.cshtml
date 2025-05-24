@@ -7,24 +7,85 @@
     <meta charset="utf-8" width=device-width/>
     <script src="https://unpkg.com/%40popperjs/core@2/dist/umd/popper.js"></script>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
-
     <!-- DataTables -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.dataTables.min.css" />
-    <script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
-    <style>
-
-    </style>
+@*     <link href="DataTables/datatables.min.css" rel="stylesheet">
+    <script src="DataTables/datatables.min.js"></script> *@
 
 </head>
 <body>
 
-    <table id="myTable" class="display table table-bordered bg-light table-responsive w-100">
-        <thead></thead>
-        <tbody></tbody>
-    </table>
+    <div class="py-4">
+        <h2 class="text-center text-info fw-bold mb-4" data-aos="fade-down">
+            <i class="fa-solid fa-list-check"></i> Orders 
+        </h2>
+
+		<table id="myTable" class="display table table-bordered bg-light table-responsive w-100">
+			<thead></thead>
+			<tbody></tbody>
+		</table>
+    </div>
+
+    <!-- Info -->
+    <div class="modal fade" id="orderInfo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-light">
+                    <h5 class="modal-title"> Order Information <i class="fa-solid fa-info"></i> </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- AJAX ile doldurulacak -->
+                </div>
+                <div class="modal-footer bg-primary">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-circle-xmark"></i> Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--Set Status-->
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success">
+                    <h5 class="modal-title">Set Order Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <h6>Current Status ID</h6>
+                    <div class="d-flex justify-content-center align-items-center gap-3 my-3">
+                        <button class="btn btn-outline-secondary" id="decreaseStatus">-</button>
+                        <span id="statusValue" class="fs-4 fw-bold">1</span>
+                        <button class="btn btn-outline-secondary" id="increaseStatus">+</button>
+                    </div>
+                </div>
+                <div class="modal-footer bg-success">
+                    <button id="confirmStatus" class="btn btn-primary">Save Status</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-circle-xmark"></i> Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--Order History-->
+    <div class="modal fade" id="orderHistory" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-light">
+                    <h5 class="modal-title"> Order History <i class="fa-regular fa-calendar"></i> </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- AJAX ile doldurulacak -->
+                </div>
+                <div class="modal-footer bg-warning">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-circle-xmark"></i> Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     
     <script>
         $(document).ready(function () {
@@ -32,7 +93,6 @@
                 url: "/OrdersArrived/GetArrivedOrders",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
                     if (response.success && response.data.length > 0) {
                         const data = response.data;
 
@@ -47,17 +107,18 @@
                             orderable: false,
                             render: function () {
                                 return `
-                                    <div class="dropdown">
-            <button class="btn btn-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa-solid fa-ellipsis-vertical"></i>
-            </button>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item bg-primary text-light" href="#"><i class="fa-solid fa-info --bg-primary" ></i> Informations</a></li>
-                 <li><a class="dropdown-item bg-warning text-light" href="#"><i class="fa-solid fa-angles-right"></i> Next Status</a></li>
-                               <li><a class="dropdown-item  bg-danger text-light" href="#""><i class="fa-solid fa-thrash"></i> Delete</a></li>
+                        <div class="dropdown">
+                            <button class="btn btn-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                             <ul class="dropdown-menu">
+                                <li><a class="dropdown-item bg-primary text-light ordersInfo"  href="#"><i class="fa-solid fa-info --bg-primary" ></i> Informations</a></li>
+                                <li><a class="dropdown-item bg-success text-light ordersStatus"  href="#"><i class="fa-solid fa-chart-simple"></i> Set Status </a></li>
+                               <li><a class="dropdown-item bg-warning text-light orderHistory" href="#"><i class="fa-solid fa-angles-right"></i> OrderHistory</a></li>
+                               <li><a class="dropdown-item  bg-danger text-light deleteOrder" href="#""><i class="fa-solid fa-thrash"></i> Delete</a></li>
 
-            </ul>
-        </div>
+                             </ul>
+                       </div>
                                 `;
                             }
                         });
@@ -82,6 +143,201 @@
                 }
             });
         });
+
+         $(document).on('click', '.deleteOrder', function (e) {
+            e.preventDefault();
+
+            const row = $(this).closest('tr');
+            const table = $('#myTable').DataTable();
+            const rowData = table.row(row).data();
+            console.log(rowData)
+
+            if (confirm("Are you sure Delete this Order")) {
+                $.ajax({
+                    url: '/OrdersArrived/DeleteOrder',
+                    type: 'POST',
+                           data: { orderId: rowData.orderId },
+                    success: function (response) {
+                         console.log("rows data",response)
+                        if (response.success) {
+                            alert("Order deleted");
+                            location.reload();
+                        } else {
+                            alert("Something went wrong");
+                            location.reload();
+                        }
+                    },
+                    error: function () {
+                        alert("Something went wrong.");
+                        location.reload();
+                    }
+                });
+            }
+        });
+
+        $(document).on("click", ".ordersInfo", function (e) {
+            e.preventDefault();
+
+            const row = $(this).closest("tr");
+            const table = $("#myTable").DataTable();
+            const rowData = table.row(row).data();
+
+            $.ajax({
+                url: "/OrdersArrived/GetInfo",
+                type: "GET",
+                data: { id: rowData.id },
+                success: function (response) {
+                    console.log("Kullanıcı Biligiler:",response)
+                    const data = response.data;
+
+                    const html = `
+                        <p><strong>Order ID:</strong> ${data.orderId}</p>
+                        <p><strong>User:</strong> ${data.userName} ${data.userSurname}</p>
+                        <p><strong>Adress:</strong> ${data.address}</p>
+                        <p><strong>Product:</strong> ${data.productExplanation}</p>
+                        <p><strong>Description:</strong> ${data.productDescription}</p>
+                        <p><strong>Unit Price:</strong> ${data.unitPrice.toFixed(2)}₺</p>
+                        <p><strong>Amount:</strong> ${data.amount}</p>
+                        <p><strong>Total Price:</strong> <span class="text-success fw-bold">${(data.unitPrice * data.amount).toFixed(2)}₺</span></p>
+                    `;
+
+                    $("#orderInfo .modal-body").html(html);
+                    $("#orderInfo").modal("show");
+                },
+                error: function () {
+                    alert("Bilgi alınırken hata oluştu.");
+                }
+            });
+        });
+
+        let selectedOrderId = 0;
+        let currentStatus = 1;
+
+        $(document).on("click", ".ordersStatus", function (e) {
+            e.preventDefault();
+
+            const row = $(this).closest("tr");
+            const table = $("#myTable").DataTable();
+            const rowData = table.row(row).data();
+            selectedOrderId = rowData.orderId;
+            currentStatus = 1;
+
+            $("#statusValue").text(currentStatus);
+            $("#statusModal").modal("show");
+        });
+
+        $("#increaseStatus").on("click", function () {
+            if (currentStatus < 5) {
+                currentStatus++;
+                $("#statusValue").text(currentStatus);
+            }
+        });
+
+        $("#decreaseStatus").on("click", function () {
+            if (currentStatus > 1) {
+                currentStatus--;
+                $("#statusValue").text(currentStatus);
+            }
+        });
+
+        $("#confirmStatus").on("click", function () {
+            $.ajax({
+                url: "/OrdersArrived/SetStatusAndHistory",
+                type: "PUT",
+                data: { statusId: currentStatus, orderId: selectedOrderId },
+                success: function (res) {
+                    if (res.success) {
+                        alert("Durum başarıyla güncellendi.");
+                        $("#statusModal").modal("hide");
+                    } else {
+                        alert(res.message || "Güncelleme başarısız.");
+                    }
+                    location.reload();
+                },
+                error: function () {
+                    alert("Sunucu hatası oluştu.");
+                }
+            });
+        });
+
+        $(document).on("click", ".orderHistory", function (e) {
+            e.preventDefault();
+
+            const row = $(this).closest("tr");
+            const table = $("#myTable").DataTable();
+            const rowData = table.row(row).data();
+            const orderDetailId = rowData.id;
+
+            $.ajax({
+                url: "/OrdersArrived/GetOrdersHistory",
+                type: "GET",
+                data: { orderDetailId: orderDetailId },
+                success: function (response) {
+                    if (response.success && response.data.length > 0) {
+                        let historyHtml = `
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">`;
+
+                        response.data.forEach((item, index) => {
+                            historyHtml += `
+                                <tr id="status-row-${index}">
+                                    <td>${index + 1}</td>
+                                    <td>${new Date(item.date).toLocaleString()}</td>
+                                    <td class="status-text" data-statusid="${item.statusId}" data-index="${index}">Loading...</td>
+                                </tr>`;
+                        });
+
+                        historyHtml += `</tbody></table></div>`;
+                        $("#orderHistory .modal-body").html(historyHtml);
+                        $("#orderHistory").modal("show");
+
+                        $(".status-text").each(function () {
+                            console.log("gelen data",$(this).data());
+                            const statusId = $(this).data("statusid");
+                            const index = $(this).data("index");
+                            const cell = $(this);
+
+                            $.ajax({
+                                url: "/Order/GetOrdersStatus",
+                                type: "GET",
+                                data: { statusId: statusId },
+                                success: function (res) {
+                                    console.log(res)
+                                        if (res.success) {
+                                        const statusText = res.data;
+                                        cell.text(statusText);
+                                         }
+                                         else
+                                         {
+                                        cell.text("Unknown");
+                                        }
+                                },
+                                error: function () {
+                                    cell.text("Error");
+                                }
+                            });
+                        });
+
+                    } else {
+                        $("#orderHistory .modal-body").html(`<div class="alert alert-info">No order history found for this item.</div>`);
+                        $("#orderHistory").modal("show");
+                    }
+                },
+                error: function () {
+                    $("#orderHistory .modal-body").html(`<div class="alert alert-danger">Error retrieving order history.</div>`);
+                    $("#orderHistory").modal("show");
+                }
+            });
+        });
+
     </script>
 
 </body>

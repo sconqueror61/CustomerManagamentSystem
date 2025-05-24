@@ -1,0 +1,234 @@
+﻿@{
+
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Completed Orders</title>
+
+    <!-- AOS CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" />
+
+    <style>
+        .table .btn {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-4">
+        <h2 class="text-center text-success fw-bold mb-4" data-aos="fade-down">
+            <i class="fas fa-check-circle me-2"></i>Completed Orders
+        </h2>
+
+        <table id="myTable" class="display table table-bordered bg-light w-100">
+            <thead>
+                <tr id="tableHeaders"></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!--Order History-->
+    <div class="modal fade" id="orderHistory" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-light">
+                    <h5 class="modal-title"> Order History <i class="fa-regular fa-calendar"></i> </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- AJAX ile doldurulacak -->
+                </div>
+                <div class="modal-footer bg-warning">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-circle-xmark"></i> Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>AOS.init();</script>
+
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                url: "/OrdersArrived/GetCompletedAndDeletedOrders",
+                type: "GET",
+                success: function (response) {
+                    if (response.success && response.data.length > 0) {
+                        const data = response.data;
+
+                        // Kolonları belirle (isDeleted hariç)
+                        const keys = Object.keys(data[0]);
+
+                        // <thead> kısmını oluştur
+                        let headerHtml = "";
+                        keys.forEach(k => {
+                            headerHtml += `<th>${k}</th>`;
+                        });
+                        headerHtml += `<th>Operations</th>`;
+                        $("#tableHeaders").html(headerHtml);
+
+                        // DataTable kolon yapılandırması
+                        const columns = keys.map(k => ({
+                            title: k,
+                            data: k
+                        }));
+
+                        // Operations kolonu ekle
+                        columns.push({
+                            title: "Operations",
+                            data: null,
+                            orderable: false,
+                            render: function (data, type, row) {
+                                return `
+                                    <button class="btn btn-info btn-sm me-1 show-history" title="View History">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm delete-order" title="Delete Order">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                `;
+                            }
+                        });
+
+                        // Varsa önceki tabloyu temizle
+                        if ($.fn.DataTable.isDataTable('#myTable')) {
+                            $('#myTable').DataTable().clear().destroy();
+                        }
+
+                        // Yeni DataTable başlat
+                        $('#myTable').DataTable({
+                            data: data,
+                            columns: columns,
+                            responsive: true,
+                            autoWidth: true
+                        });
+                    } else {
+                        $('#myTable tbody').html('<tr><td colspan="100%">Veri bulunamadı</td></tr>');
+                    }
+                },
+                error: function (err) {
+                    console.error("AJAX hata:", err);
+                    $('#myTable tbody').html('<tr><td colspan="100%">Hata oluştu</td></tr>');
+                }
+            });
+
+        $(document).on("click", ".show-history", function (e) {
+            e.preventDefault();
+
+            const row = $(this).closest("tr");
+            const table = $("#myTable").DataTable();
+            const rowData = table.row(row).data();
+            const orderDetailId = rowData.id;
+
+            $.ajax({
+                url: "/OrdersArrived/GetOrdersHistory",
+                type: "GET",
+                data: { orderDetailId: orderDetailId },
+                success: function (response) {
+                    if (response.success && response.data.length > 0) {
+                        let historyHtml = `
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">`;
+
+                        response.data.forEach((item, index) => {
+                            historyHtml += `
+                                <tr id="status-row-${index}">
+                                    <td>${index + 1}</td>
+                                    <td>${new Date(item.date).toLocaleString()}</td>
+                                    <td class="status-text" data-statusid="${item.statusId}" data-index="${index}">Loading...</td>
+                                </tr>`;
+                        });
+
+                        historyHtml += `</tbody></table></div>`;
+                        $("#orderHistory .modal-body").html(historyHtml);
+                        $("#orderHistory").modal("show");
+
+                        $(".status-text").each(function () {
+                            console.log("gelen data",$(this).data());
+                            const statusId = $(this).data("statusid");
+                            const index = $(this).data("index");
+                            const cell = $(this);
+
+                            $.ajax({
+                                url: "/Order/GetOrdersStatus",
+                                type: "GET",
+                                data: { statusId: statusId },
+                                success: function (res) {
+                                    console.log(res)
+                                        if (res.success) {
+                                        const statusText = res.data;
+                                        cell.text(statusText);
+                                         }
+                                         else
+                                         {
+                                        cell.text("Unknown");
+                                        }
+                                },
+                                error: function () {
+                                    cell.text("Error");
+                                }
+                            });
+                        });
+
+                    } else {
+                        $("#orderHistory .modal-body").html(`<div class="alert alert-info">No order history found for this item.</div>`);
+                        $("#orderHistory").modal("show");
+                    }
+                },
+                error: function () {
+                    $("#orderHistory .modal-body").html(`<div class="alert alert-danger">Error retrieving order history.</div>`);
+                    $("#orderHistory").modal("show");
+                }
+            });
+        });
+
+
+        $('#myTable').on('click', '.delete-order', function () {
+            const rowData = $('#myTable').DataTable().row($(this).closest('tr')).data();
+
+            if (confirm("Are you sure you want to delete this order and all related data?")) {
+                $.ajax({
+                    url: "/OrdersArrived/DeleteOrderCascade",
+                    type: "POST",
+                    data: { orderDetailId: rowData.id },
+                    success: function (response) {
+                        if (response.success) {
+                            alert("Order and related data deleted successfully.");
+                            location.reload();
+                        } else {
+                            alert("Failed: " + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert("Server error occurred.");
+                    }
+                });
+            }
+        });
+
+        });
+    </script>
+
+</body>
+</html>

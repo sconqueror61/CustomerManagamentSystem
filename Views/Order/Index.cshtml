@@ -110,7 +110,7 @@
                 $.get("/Order/GetOrdersStatus")
             ).done(function (ordersRes, detailsRes, statusRes) {
                 if (!ordersRes[0].success || !detailsRes[0].success || !statusRes[0].success) {
-                    $("#ordersAccordion").html(`<div class="alert alert-danger">Siparişler yüklenemedi.</div>`);
+                    $("#ordersAccordion").html(`<div class="alert alert-danger">Orders cannot been upload.</div>`);
                     return;
                 }
 
