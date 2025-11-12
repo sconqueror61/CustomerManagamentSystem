@@ -3,156 +3,90 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CustomerManagementSystem.Controllers
 {
 	public class StartingController : Controller
 	{
-		private readonly CustomerManagementSystemContext _context;
-
-		public StartingController(CustomerManagementSystemContext context)
+		private readonly CustomerManagementSystemContext _db;
+		public StartingController(CustomerManagementSystemContext db)
 		{
-			_context = context;
+			_db = db;
 		}
 
-		// GET: Starting
-		public async Task<IActionResult> Index()
+		private (int? CustomerId, bool IsCustomer) GetCurrentCustomer()
 		{
-			return View(await _context.Users.ToListAsync());
+			var type = User.FindFirst("UserTypeId")?.Value;
+			var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId")?.Value;
+			if (int.TryParse(idStr, out var cid))
+				return (cid, type == "2");
+			return (null, false);
 		}
 
-		// GET: Starting/Details/5
-		public async Task<IActionResult> Details(int? id)
+		private async Task<Session?> GetLatestSessionAsync(int customerId)
 		{
-			if (id == null)
-			{
-				return NotFound();
-			}
-
-			var user = await _context.Users
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (user == null)
-			{
-				return NotFound();
-			}
-
-			return View(user);
+			return await _db.Sessions
+				.Where(s => s.CustomerId == customerId)
+				.OrderByDescending(s => s.EnterTime)
+				.FirstOrDefaultAsync();
 		}
 
-		// GET: Starting/Create
-		public IActionResult Create()
+		private async Task FlushCookiePathsAsync()
 		{
-			return View();
-		}
 
-		// POST: Starting/Create
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Create([Bind("Id,UserTypeId,Password,Email,Name,SurName,Adress")] User user)
-		{
-			if (ModelState.IsValid)
-			{
-				_context.Add(user);
-				await _context.SaveChangesAsync();
-				return RedirectToAction(nameof(Index));
-			}
-			return View(user);
-		}
+			var raw = Request.Cookies["cust_paths"];
+			if (string.IsNullOrWhiteSpace(raw)) return;
 
-		// GET: Starting/Edit/5
-		public async Task<IActionResult> Edit(int? id)
-		{
-			if (id == null)
-			{
-				return NotFound();
-			}
+			var (cid, isCust) = GetCurrentCustomer();
+			if (!isCust || cid is null) return;
 
-			var user = await _context.Users.FindAsync(id);
-			if (user == null)
-			{
-				return NotFound();
-			}
-			return View(user);
-		}
+			var session = await GetLatestSessionAsync(cid.Value);
 
-		// POST: Starting/Edit/5
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Edit(int id, [Bind("Id,UserTypeId,Password,Email,Name,SurName,Adress")] User user)
-		{
-			if (id != user.Id)
-			{
-				return NotFound();
-			}
+			var paths = raw
+				.Split('|', StringSplitOptions.RemoveEmptyEntries)
+				.Select(p => p.Trim())
+				.Where(p => p.Length > 0)
+				.Take(10)
+				.ToArray();
 
-			if (ModelState.IsValid)
+			if (paths.Length == 0) return;
+
+			var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+			var ua = Request.Headers["User-Agent"].ToString();
+			var now = DateTime.UtcNow;
+
+			foreach (var p in paths)
 			{
-				try
+				_db.SessionDetails.Add(new SessionDetail
 				{
-					_context.Update(user);
-					await _context.SaveChangesAsync();
-				}
-				catch (DbUpdateConcurrencyException)
-				{
-					if (!UserExists(user.Id))
-					{
-						return NotFound();
-					}
-					else
-					{
-						throw;
-					}
-				}
-				return RedirectToAction(nameof(Index));
+					SessionId = session?.Id ?? 0,
+					Action = "PathVisit",
+					Path = p,
+				});
 			}
-			return View(user);
+
+			await _db.SaveChangesAsync();
+
+			Response.Cookies.Delete("cust_paths");
 		}
 
-		// GET: Starting/Delete/5
-		public async Task<IActionResult> Delete(int? id)
+		public async Task<IActionResult> LogOut(int? userId)
 		{
-			if (id == null)
+			if (userId is null)
 			{
-				return NotFound();
+				var claimVal = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				if (int.TryParse(claimVal, out var parsed))
+					userId = parsed;
 			}
 
-			var user = await _context.Users
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (user == null)
-			{
-				return NotFound();
-			}
+			if (userId is not null)
+				TempData["LastLoggedOutUserId"] = userId.Value;
 
-			return View(user);
-		}
+			await FlushCookiePathsAsync();
 
-		// POST: Starting/Delete/5
-		[HttpPost, ActionName("Delete")]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> DeleteConfirmed(int id)
-		{
-			var user = await _context.Users.FindAsync(id);
-			if (user != null)
-			{
-				_context.Users.Remove(user);
-			}
-
-			await _context.SaveChangesAsync();
-			return RedirectToAction(nameof(Index));
-		}
-
-		private bool UserExists(int id)
-		{
-			return _context.Users.Any(e => e.Id == id);
-		}
-
-		public async Task<IActionResult> LogOut()
-		{
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
 			return RedirectToAction("Login", "Access");
 		}
 	}

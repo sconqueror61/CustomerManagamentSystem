@@ -24,18 +24,18 @@
 
 	<!-- Add Modal -->
 	<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
+		<div class="modal-dialog bg-primary">
+			<div class="modal-content ">
+				<div class="modal-header bg-primary">
 					<h5 class="modal-title">Add</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					<button type="button" class="btn-close btn-danger" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<input type="text" id="description" class="form-control" placeholder="Enter a Description">
 				</div>
-				<div class="modal-footer">
+				<div class="modal-footer bg-primary">
 					<button type="button" id="close" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-					<button type="button" id="submit" class="btn btn-primary">Submit</button>
+					<button type="button" id="submit" class="btn btn-success">Submit</button>
 				</div>
 			</div>
 		</div>
@@ -45,7 +45,7 @@
 	<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
-				<div class="modal-header">
+				<div class="modal-header bg-danger">
 					<h5 class="modal-title">Delete Service</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
@@ -53,9 +53,9 @@
 					<div>Are you sure to delete the service?</div>
 					<div id="serviceId" style="display: none;"></div>
 				</div>
-				<div class="modal-footer">
+				<div class="modal-footer bg-danger">
 					<button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
-					<button type="button" id="deleteb" class="btn btn-danger">Delete</button>
+					<button type="button" id="deleteb" class="btn btn-warning">Delete</button>
 				</div>
 			</div>
 		</div>
@@ -65,16 +65,16 @@
 	<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
-				<div class="modal-header">
+				<div class="modal-header bg-warning">
 					<h5 class="modal-title">Edit</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<input type="text" id="descriptionE" class="form-control">
 				</div>
-				<div class="modal-footer">
+				<div class="modal-footer bg-warning">
 					<button type="button" id="close" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-					<button type="button" id="editb" class="btn btn-warning">Edit</button>
+					<button type="button" id="editb" class="btn btn-success">Edit</button>
 				</div>
 			</div>
 		</div>

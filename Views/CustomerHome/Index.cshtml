@@ -1,8 +1,9 @@
 ﻿@model IEnumerable<CustomerManagementSystem.DB.User>
-
+@using System.Security.Claims
 @{
     Layout = null;
     ViewData["Title"] = "CustomerHome";
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 
 <!DOCTYPE html>
@@ -146,10 +147,12 @@
 
             <!-- Sağ: LogOut -->
             <div class="text-end">
-                <a class="btn btn-danger d-flex align-items-center gap-2" asp-area="" asp-controller="Starting" asp-action="LogOut"
-                   style="height: 34px; font-size: 14px;">
+                <button id="logoutBtn"
+                        class="btn btn-danger d-flex align-items-center gap-2"
+                        data-userid="@userId"
+                        style="height:34px; font-size:14px;">
                     <i class="fa-solid fa-right-from-bracket"></i> LogOut
-                </a>
+                </button>
             </div>
         </div>
     </nav>
@@ -265,7 +268,17 @@
                 }
             }
 
-            setTimeout(typeNextChar, 500); // Başlamadan önce biraz gecikme
+            setTimeout(typeNextChar, 500);
+            $("#logoutBtn").on("click", function () {
+            var userId = $(this).data("userid"); // client tarafında butonun data attr.'undan çek
+            console.log("User ID:", userId);
+
+            if (userId) {
+                window.location.href = "/Starting/LogOut?userId=" + userId;
+            } else {
+                window.location.href = "/Starting/LogOut";
+            }
+        });
         });
 
 

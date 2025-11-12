@@ -18,4 +18,6 @@ public partial class User
     public string SurName { get; set; } = null!;
 
     public string Adress { get; set; } = null!;
+
+    public string? Country { get; set; }
 }

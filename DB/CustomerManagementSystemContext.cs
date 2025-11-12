@@ -35,6 +35,10 @@ public partial class CustomerManagementSystemContext : DbContext
 
     public virtual DbSet<Service> Services { get; set; }
 
+    public virtual DbSet<Session> Sessions { get; set; }
+
+    public virtual DbSet<SessionDetail> SessionDetails { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserBasket> UserBaskets { get; set; }
@@ -140,9 +144,30 @@ public partial class CustomerManagementSystemContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(50);
         });
 
+        modelBuilder.Entity<Session>(entity =>
+        {
+            entity.ToTable("Session");
+
+            entity.Property(e => e.Culture).HasMaxLength(140);
+            entity.Property(e => e.EnterTime).HasColumnType("datetime");
+            entity.Property(e => e.ExitTime).HasColumnType("datetime");
+            entity.Property(e => e.Ipadress)
+                .HasMaxLength(10)
+                .HasColumnName("IPadress");
+        });
+
+        modelBuilder.Entity<SessionDetail>(entity =>
+        {
+            entity.ToTable("SessionDetail");
+
+            entity.Property(e => e.Action).HasMaxLength(50);
+            entity.Property(e => e.Path).HasMaxLength(100);
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.Property(e => e.Adress).HasMaxLength(100);
+            entity.Property(e => e.Country).HasMaxLength(20);
             entity.Property(e => e.Email)
                 .HasMaxLength(50)
                 .HasColumnName("email");

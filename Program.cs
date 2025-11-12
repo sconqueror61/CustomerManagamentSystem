@@ -1,25 +1,26 @@
-using CustomerManagementSystem.DB;
+ï»¿using CustomerManagementSystem.DB;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Veritabaný baðlamýný (DbContext) servis konteynerine ekleyelim
+// VeritabanÄ± baÄŸlamÄ±nÄ± (DbContext) servis konteynerine ekleyelim
 builder.Services.AddDbContext<CustomerManagementSystemContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Authentication yapýlandýrmasý
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
-{
-	options.LoginPath = "/Access/Login";
-	options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
-});
+// Authentication yapÄ±landÄ±rmasÄ±
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+	.AddCookie(options =>
+	{
+		options.LoginPath = "/Access/Login";
+		options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
+	});
 
-// Session yapýlandýrmasý
-builder.Services.AddDistributedMemoryCache(); // Session için memory cache
+// Session yapÄ±landÄ±rmasÄ±
+builder.Services.AddDistributedMemoryCache(); // Session iÃ§in memory cache
 builder.Services.AddSession(options =>
 {
-	options.IdleTimeout = TimeSpan.FromMinutes(30); // Oturum süresi
+	options.IdleTimeout = TimeSpan.FromMinutes(30); // Oturum sÃ¼resi
 	options.Cookie.HttpOnly = true;
 	options.Cookie.IsEssential = true;
 });
@@ -30,7 +31,7 @@ builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-// HTTP isteði iþlem hattýný (middleware) yapýlandýrma
+// HTTP isteÄŸi iÅŸlem hattÄ±nÄ± (middleware) yapÄ±landÄ±rma
 if (!app.Environment.IsDevelopment())
 {
 	app.UseExceptionHandler("/Home/Error");
@@ -41,11 +42,49 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Session middleware'ini ekliyoruz
+// Session middlewari ekleme
 app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+
+app.Use(async (ctx, next) =>
+{
+	var user = ctx.User;
+	if (user?.Identity?.IsAuthenticated == true &&
+		user.FindFirst("UserTypeId")?.Value == "2")
+	{
+		var path = ctx.Request.Path + ctx.Request.QueryString;
+
+		var existing = ctx.Request.Cookies["cust_paths"];
+		var list = (existing ?? "")
+			.Split('|', StringSplitOptions.RemoveEmptyEntries)
+			.ToList();
+
+		// ArdÄ±ÅŸÄ±k duplicate Ã¶nleme (opsiyonel ama faydalÄ±)
+		if (list.Count == 0 || list[^1] != path)
+			list.Add(path);
+
+		// Son 10 kaydÄ± koru
+		if (list.Count > 10)
+			list = list.Skip(list.Count - 10).ToList();
+
+		var value = string.Join('|', list);
+
+		ctx.Response.Cookies.Append("cust_paths", value, new CookieOptions
+		{
+			Path = "/",                    // site geneli eriÅŸim
+			HttpOnly = true,               // JS okuyamaz; controller okuyabilir
+			Secure = true,                 // HTTPS altÄ±nda gÃ¶nder
+			SameSite = SameSiteMode.Lax,   // aynÄ± site isteklerinde gÃ¶nderilir
+			Expires = DateTimeOffset.UtcNow.AddHours(12)
+		});
+	}
+
+	await next();
+});
+
 app.MapControllers();
 
 app.MapControllerRoute(
