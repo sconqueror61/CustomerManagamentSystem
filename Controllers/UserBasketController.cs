@@ -1,11 +1,26 @@
 ﻿using CustomerManagementSystem.DB;
 using Microsoft.AspNetCore.Mvc;
-
+using System.Security.Claims;
 namespace CustomerManagementSystem.Controllers
 {
 	public class UserBasketController : Controller
 	{
 		private readonly CustomerManagementSystemContext _dbcontext;
+
+		private int? UserId
+		{
+			get
+			{
+				// ClaimTypes.NameIdentifier veya "UserId" claimlerinden çekiyoruz
+				var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier)
+							?? User.FindFirst("UserId")?.Value;
+
+				if (int.TryParse(idStr, out var id))
+					return id;
+
+				return null;
+			}
+		}
 
 		public UserBasketController(CustomerManagementSystemContext dbcontext)
 		{
@@ -13,17 +28,6 @@ namespace CustomerManagementSystem.Controllers
 		}
 
 		public List<UserBasket> UserBaskets { get; set; } = new List<UserBasket>();
-
-		private int? UserId
-		{
-			get
-			{
-				var userIdClaim = User.FindFirst("UserId")?.Value;
-				if (int.TryParse(userIdClaim, out int userId))
-					return userId;
-				return null;
-			}
-		}
 
 		public IActionResult Index()
 		{
@@ -82,73 +86,81 @@ namespace CustomerManagementSystem.Controllers
 
 			return Json(new { success = false, message = "Something else wrong" });
 		}
-
-		[HttpPut]
+		[HttpPost, HttpPut]
 		public JsonResult UpdateBasketAmount(int productId, int amount)
 		{
-			var userIdClaim = User.FindFirst("UserId")?.Value;
-
-			if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+			if (!UserId.HasValue)
 			{
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
+				return Json(new { success = false, message = "User not found." });
 			}
 
-			var product = _dbcontext.Products.FirstOrDefault(x => x.Id == productId);
+			var userId = UserId.Value;
 
-			if (product == null)
-				return Json(new { success = false, message = "Ürün bulunamadı." });
+			// Sepette bu ürün var mı?
+			var basketItem = _dbcontext.UserBaskets
+				.FirstOrDefault(x => x.UserId == userId
+									 && x.ProductId == productId
+									 && x.IsDeleted == false);
 
-			var userBasket = _dbcontext.UserBaskets
-				.FirstOrDefault(x => x.ProductId == productId && x.UserId == userId && x.IsDeleted != true);
-
-			if (userBasket == null)
+			// amount 0 veya altı ise: sepetten sil
+			if (amount <= 0)
 			{
-				// Ürün sepette yoksa, yeni kayıt oluştur
-				if (amount > product.Stock)
-					return Json(new { success = false, message = "Yeterli stok yok." });
-
-				userBasket = new UserBasket()
+				if (basketItem != null)
 				{
+					basketItem.IsDeleted = true;
+					basketItem.Amount = 0;
+					_dbcontext.SaveChanges();
+				}
+
+				// güncel toplam
+				var total0 = (from b in _dbcontext.UserBaskets
+							  join p in _dbcontext.Products on b.ProductId equals p.Id
+							  where b.UserId == userId && b.IsDeleted == false
+							  select (b.Amount ?? 0) * p.Price).Sum();
+
+				return Json(new
+				{
+					success = true,
+					message = "Ürün sepetten çıkarıldı.",
+					amount = 0,
+					total = total0
+				});
+			}
+
+			// amount > 0 ise: varsa güncelle, yoksa ekle (UPSERT)
+			if (basketItem == null)
+			{
+				basketItem = new UserBasket
+				{
+					UserId = userId,
 					ProductId = productId,
 					Amount = amount,
-					UserId = userId,
-					RecordDate = DateTime.Now,
 					IsDeleted = false
 				};
-
-				product.Stock -= amount;
-				_dbcontext.UserBaskets.Add(userBasket);
+				_dbcontext.UserBaskets.Add(basketItem);
 			}
 			else
 			{
-				// Ürün sepette varsa, sadece miktar güncellemesi yap
-				int difference = amount - (userBasket.Amount ?? 0);
-
-				if (difference > 0)
-				{
-					// Kullanıcı sepetteki miktarı artırmak istiyor
-					if (product.Stock < difference)
-						return Json(new { success = false, message = "Stok yetersiz." });
-
-					product.Stock -= difference;
-				}
-				else if (difference < 0)
-				{
-					// Kullanıcı sepetteki miktarı azaltmak istiyor
-					product.Stock += Math.Abs(difference);
-				}
-
-				userBasket.Amount = amount;
-				userBasket.RecordDate = DateTime.Now;
-				_dbcontext.UserBaskets.Update(userBasket);
+				basketItem.Amount = amount;
+				basketItem.IsDeleted = false;
 			}
 
-			_dbcontext.Products.Update(product);
 			_dbcontext.SaveChanges();
 
-			return Json(new { success = true, message = "Sepet güncellendi." });
-		}
+			// Güncel toplam sepet tutarı
+			var total = (from b in _dbcontext.UserBaskets
+						 join p in _dbcontext.Products on b.ProductId equals p.Id
+						 where b.UserId == userId && b.IsDeleted == false
+						 select (b.Amount ?? 0) * p.Price).Sum();
 
+			return Json(new
+			{
+				success = true,
+				message = "Sepet güncellendi.",
+				amount = amount,
+				total = total
+			});
+		}
 
 		[HttpDelete]
 		public IActionResult DeleteProductFromBasket(int productId)

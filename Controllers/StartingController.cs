@@ -15,6 +15,11 @@ namespace CustomerManagementSystem.Controllers
 			_db = db;
 		}
 
+		public IActionResult Index()
+		{
+			return View();
+		}
+
 		private (int? CustomerId, bool IsCustomer) GetCurrentCustomer()
 		{
 			var type = User.FindFirst("UserTypeId")?.Value;
@@ -89,5 +94,50 @@ namespace CustomerManagementSystem.Controllers
 
 			return RedirectToAction("Login", "Access");
 		}
+		public JsonResult GetCompletedOrdersDaily()
+		{
+			// İstersen admin kontrolü (UserTypeId = 1 admin kabul ediyorsan)
+			var userType = User.FindFirst("UserTypeId")?.Value;
+			if (userType != "1")
+			{
+				return Json(new { success = false, message = "Yetkisiz erişim." });
+			}
+
+			var completed = (from h in _db.OrdersHistories
+							 join d in _db.OrdersDetails on h.OrderDetailId equals d.Id
+							 join o in _db.Orders on d.OrderId equals o.Id
+							 where h.StatusId == 5
+								   && d.IsDeleted == false
+								   && o.IsDeleted == false
+							 orderby h.Date descending
+							 select new
+							 {
+								 OrderHistoryId = h.Id,
+								 h.OrderDetailId,
+								 h.Date,
+
+								 OrderId = o.Id,
+								 o.UserId,
+								 o.TotalAmount,
+								 o.TotalPrice,
+								 OrderDate = o.Date,
+
+								 DetailId = d.Id,
+								 d.ProductId,
+								 d.SupplierId,
+								 d.Amount,
+								 d.Price,
+								 LineTotal = (d.Amount ?? 0) * d.Price
+							 })
+							 .ToList();
+
+			return Json(new
+			{
+				success = true,
+				totalCompleted = completed.Count,
+				data = completed
+			});
+		}
+
 	}
 }

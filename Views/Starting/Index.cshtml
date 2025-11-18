@@ -24,7 +24,7 @@
             padding: 20px;
             min-height: 250px;
         }
-        /* %78 Gauge Grafiği için CSS */
+
         .gauge-container {
             position: relative;
             width: 100px;
@@ -158,7 +158,7 @@
         AOS.init();
 
         // --- 1. AYLIK SATIŞ ÇUBUK GRAFİĞİ (monthlyBarChart) ---
-        const monthlyLabels = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz'];
+        const monthlyLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thirsday', 'Friday', 'Saturday'];
         const monthlyBarCtx = document.getElementById('monthlyBarChart').getContext('2d');
 
         new Chart(monthlyBarCtx, {
@@ -187,7 +187,6 @@
                 }
             },
         });
-
 
         // --- 2. DÖNÜŞ HEDEFİ ALAN GRAFİĞİ (returningAreaChart) ---
         const labelsTarget = [0, 88, 175, 263, 350, 438, 525, 613, 700];

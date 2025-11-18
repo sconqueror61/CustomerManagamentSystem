@@ -157,53 +157,79 @@
         let currentSortOrder = null;
 
         $(document).ready(function () {
+            // Sayfa açılır açılmaz kategorileri ve ürünleri yükle
             loadCategories();
 
-        $(document).on("click", ".delete-product", function () {
-            const productId = $(this).data("id");
+            // Sepetten ürün silme (delegated event)
+            $(document).on("click", ".delete-product", function () {
+                const productId = $(this).data("id");
+                if (!productId) return;
 
-            if (confirm("Ürünü sepetten silmek istediğinize emin misiniz?")) {
+                if (confirm("Sepetten bu ürünü silmek istediğinizden emin misiniz?")) {
+                    $.ajax({
+                        url: "/UserBasket/DeleteProductFromBasket",
+                        type: "DELETE",
+                        data: { productId: productId },
+                        success: function (res) {
+                            // Controller JSON döndürüyorsa onu da dikkate al
+                            if (res && res.success === false) {
+                                alert(res.message || "Silme sırasında hata oluştu.");
+                                return;
+                            }
+
+                            alert("Ürün sepetten silindi.");
+                            loadProducts(); // Ürünler yeniden yüklensin
+                        },
+                        error: function () {
+                            alert("Silme sırasında hata oluştu.");
+                        }
+                    });
+                }
+            });
+
+            // Sepeti onayla → siparişe çevir
+            $("#confirmBasketBtn").click(function () {
                 $.ajax({
-                    url: `/UserBasket/DeleteProductFromBasket?productId=${productId}`,
-                    type: "DELETE",
-                    success: function () {
-                        alert("Ürün sepetten silindi.");
-                        loadProducts(); // Ürünler yeniden yüklensin
+                    url: "/Order/SubmitOrdersAndDetails",
+                    type: "POST",
+                    success: function (res) {
+                        // Yeni action JSON döndürüyor: { success, message, ... }
+                        if (!res || res.success === false) {
+                            alert((res && res.message) ? res.message : "Sipariş oluşturulurken bir hata oluştu.");
+                            return;
+                        }
+
+                        alert(res.message || "Siparişiniz alındı.");
+                        loadProducts();
+                        // Siparişler sayfasına atmak istersen:
+                        // window.location.href = "/OrdersArrived/Index";
                     },
                     error: function () {
-                        alert("Silme sırasında hata oluştu.");
+                        alert("Sipariş isteği gönderilirken bir hata oluştu.");
                     }
                 });
-            }
-        });
+            });
 
-        $("#confirmBasketBtn").click(function()
-        {
-            $.ajax({
-                url : "/Order/SubmitOrdersAndDetails",
-                type: 'POST',
-                success: function(){
-                    alert("Your order has received");
-                    loadProducts();
-                },
-                error: function(){
-                    alert("Something went wrong");
+            function formatCurrency(value) {
+                if (typeof value !== "number" || isNaN(value)) {
+                    return "0.00 $";
                 }
-            })
-        }
-        );
+                return value.toFixed(2) + " $";
+            }
 
+            // Kategorileri yükle
             function loadCategories() {
                 $.get("/Pcategories/GetCategoryByIds")
                     .done(function (res) {
                         const container = $("#buttonContainer").empty();
 
-                        if (!res.data || res.data.length === 0) {
+                        if (!res || !res.data || res.data.length === 0) {
                             container.text("Kategori bulunamadı.");
+                            loadProducts();
                             return;
                         }
 
-                        res.data.forEach(cat => {
+                        res.data.forEach(function (cat) {
                             const btn = $("<button>")
                                 .addClass("btn filter-btn me-2 mb-2")
                                 .toggleClass("btn-primary", selectedCategoryId === cat.id)
@@ -211,107 +237,155 @@
                                 .text(cat.categories)
                                 .attr("data-id", cat.id)
                                 .on("click", function () {
+                                    // Aynı kategoriye tekrar tıklarsa filtreyi kaldır (0)
                                     selectedCategoryId = (selectedCategoryId === cat.id) ? 0 : cat.id;
-                                    $(".filter-btn").removeClass("btn-primary").addClass("btn-outline-primary");
-                                    if (selectedCategoryId !== 0) $(this).removeClass("btn-outline-primary").addClass("btn-primary");
+
+                                    $(".filter-btn")
+                                        .removeClass("btn-primary")
+                                        .addClass("btn-outline-primary");
+
+                                    if (selectedCategoryId !== 0) {
+                                        $(this)
+                                            .removeClass("btn-outline-primary")
+                                            .addClass("btn-primary");
+                                    }
+
                                     loadProducts();
                                 });
+
                             container.append(btn);
                         });
 
                         loadProducts();
                     })
-                    .fail(err => {
+                    .fail(function (err) {
                         console.error("Kategori yüklenemedi", err);
                         $("#buttonContainer").text("Kategori yüklenemedi.");
+                        loadProducts();
                     });
             }
 
+            // Sepetteki ürünleri yükle
             function loadProducts() {
-            $.get("/UserBasket/GetUserBasketProducts")
-                .done(function (res) {
-                    console.log(res);
-                    const container = $("#productContainer").empty();
+                $.get("/UserBasket/GetUserBasketProducts")
+                    .done(function (res) {
+                        console.log(res);
+                        const container = $("#productContainer").empty();
 
-                    // Toplam fiyatı göster
-                    $("#totalPriceContainer").text("Total: $" + res.total.toFixed(2));
+                        let total = 0;
 
-                    // Sepet boşsa
-                    if (!res.success || !res.data || res.data.length === 0) {
+                        // total backend'den geliyorsa onu kullan
+                        if (res && typeof res.total === "number") {
+                            total = res.total;
+                        }
+
+                        // Sepet boş ya da hata varsa
+                        if (!res || res.success === false || !res.data || res.data.length === 0) {
+                            container
+                                .removeClass("row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4")
+                                .addClass("d-flex justify-content-center align-items-center flex-column")
+                                .css("min-height", "300px")
+                                .html('<div class="alert alert-warning text-center text-danger">Basket is empty</div>');
+
+                            $("#totalPriceContainer").text("Total: " + formatCurrency(0));
+                            return;
+                        }
+
+                        // Sepet doluysa grid görünümünü aç
                         container
-                            .removeClass("row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4")
-                            .addClass("d-flex justify-content-center align-items-center flex-column")
-                            .css("min-height", "300px")
-                            .html(`
-                                <div class="alert alert-warning text-center text-danger">Basket is Empty</div>
-                            `);
+                            .removeClass("d-flex justify-content-center align-items-center flex-column")
+                            .addClass("row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4")
+                            .css("min-height", "");
 
-                        $("#totalPriceContainer").text(""); // sepet boşsa toplamı temizle
-                        return;
-                    }
+                        let products = res.data.slice(); // kopya al
 
-                    // Sepet boş değilse eski sınıfları geri yükle
-                    container
-                        .removeClass("d-flex justify-content-center align-items-center flex-column")
-                        .addClass("row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4")
-                        .css("min-height", "");
+                        // Kategori filtresi
+                        if (selectedCategoryId !== 0) {
+                            products = products.filter(function (p) {
+                                return p.categoryId === selectedCategoryId;
+                            });
+                        }
 
-                    let products = res.data;
+                        // Fiyat sıralama
+                        if (currentSortOrder === "asc") {
+                            products.sort(function (a, b) { return a.price - b.price; });
+                        } else if (currentSortOrder === "desc") {
+                            products.sort(function (a, b) { return b.price - a.price; });
+                        }
 
-                    if (selectedCategoryId !== 0) {
-                        products = products.filter(p => p.categoryId === selectedCategoryId);
-                    }
+                        // Backend total göndermediyse frontende hesapla
+                        if (!(res && typeof res.total === "number")) {
+                            total = 0;
+                            products.forEach(function (p) {
+                                const amount = p.amount || 0;
+                                const price = p.price || 0;
+                                total += amount * price;
+                            });
+                        }
 
-                    if (currentSortOrder === "asc") {
-                        products.sort((a, b) => a.price - b.price);
-                    } else if (currentSortOrder === "desc") {
-                        products.sort((a, b) => b.price - a.price);
-                    }
+                        $("#totalPriceContainer").text("Total: " + formatCurrency(total));
 
-                    for (let p of products) {
-                        const img = (p.pimages?.length > 0) ? p.pimages[0] : "/images/no-image.png";
+                        // Ürün kartları
+                        products.forEach(function (p) {
+                            const img = (p.pimages && p.pimages.length > 0)
+                                ? p.pimages[0]
+                                : "/images/no-image.png";
 
-                        container.append(`
-                            <div class="col-md-6 col-lg-4 mb-4">
-                                <div class="card shadow-sm h-100 border-0">
-                                    <img src="${img}" class="card-img-top product-image" alt="${p.explanation}">
-                                    <div class="card-body text-center">
-                                        <h5 class="text-primary">${p.explanation}</h5>
-                                        <p class="text-muted">${p.description}</p>
-                                        <p class="fw-bold text-success">${p.price}$</p>
-                                        <p class="text-secondary">Quantity: ${p.amount}</p>
-                                        <p class="fw-bold">Subtotal: $${p.totalPrice.toFixed(2)}</p>
-                                        <button class="btn btn-sm btn-outline-danger w-100 mt-2 delete-product" data-id="${p.id}"><i class="fa fa-trash"></i> Remove</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
-                    }
-                })
-                .fail(err => {
-                    console.error("Ürünler yüklenemedi", err);
-                    $("#productContainer").html('<div class="alert alert-danger text-center">Ürünler yüklenemedi.</div>');
-                    $("#totalPriceContainer").text("");
-                });
+                            const subtotal = (typeof p.totalPrice === "number")
+                                ? p.totalPrice
+                                : (p.price || 0) * (p.amount || 0);
 
-        }
+                            container.append(
+                                '<div class="col-md-6 col-lg-4 mb-4">' +
+                                    '<div class="card shadow-sm h-100 border-0">' +
+                                        '<img src="' + img + '" class="card-img-top product-image" alt="' + (p.explanation || "") + '">' +
+                                        '<div class="card-body text-center">' +
+                                            '<h5 class="text-primary">' + (p.explanation || "") + '</h5>' +
+                                            '<p class="text-muted">' + (p.description || "") + '</p>' +
+                                            '<p class="fw-bold text-success">' + formatCurrency(p.price || 0) + '</p>' +
+                                            '<p class="text-secondary">Quantity: ' + (p.amount || 0) + '</p>' +
+                                            '<p class="fw-bold">Subtotal: ' + formatCurrency(subtotal) + '</p>' +
+                                            '<button class="btn btn-sm btn-outline-danger w-100 mt-2 delete-product" data-id="' + p.id + '">' +
+                                                '<i class="fa fa-trash"></i> Remove' +
+                                            '</button>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>'
+                            );
+                        });
+                    })
+                    .fail(function (err) {
+                        console.error("Ürünler yüklenemedi", err);
+                        $("#productContainer").html('<div class="alert alert-danger text-center">Ürünler yüklenemedi.</div>');
+                        $("#totalPriceContainer").text("Total: " + formatCurrency(0));
+                    });
+            }
 
-            $("#lowFilter").click(() => {
+            // Filtre butonları (düşük / yüksek fiyat)
+            $("#lowFilter").click(function () {
                 currentSortOrder = (currentSortOrder !== "asc") ? "asc" : null;
-                toggleSortButtons(); loadProducts();
+                toggleSortButtons();
+                loadProducts();
             });
 
-            $("#highFilter").click(() => {
+            $("#highFilter").click(function () {
                 currentSortOrder = (currentSortOrder !== "desc") ? "desc" : null;
-                toggleSortButtons(); loadProducts();
+                toggleSortButtons();
+                loadProducts();
             });
 
             function toggleSortButtons() {
-                $("#lowFilter").toggleClass("btn-secondary", currentSortOrder === "asc").toggleClass("btn-outline-secondary", currentSortOrder !== "asc");
-                $("#highFilter").toggleClass("btn-secondary", currentSortOrder === "desc").toggleClass("btn-outline-secondary", currentSortOrder !== "desc");
+                $("#lowFilter")
+                    .toggleClass("btn-secondary", currentSortOrder === "asc")
+                    .toggleClass("btn-outline-secondary", currentSortOrder !== "asc");
+
+                $("#highFilter")
+                    .toggleClass("btn-secondary", currentSortOrder === "desc")
+                    .toggleClass("btn-outline-secondary", currentSortOrder !== "desc");
             }
         });
     </script>
+
 
 </body>
 </html>
