@@ -94,14 +94,23 @@ namespace CustomerManagementSystem.Controllers
 
 			return RedirectToAction("Login", "Access");
 		}
+		[HttpGet]
 		public JsonResult GetCompletedOrdersDaily()
 		{
-			// İstersen admin kontrolü (UserTypeId = 1 admin kabul ediyorsan)
 			var userType = User.FindFirst("UserTypeId")?.Value;
 			if (userType != "1")
 			{
-				return Json(new { success = false, message = "Yetkisiz erişim." });
+				return Json(new { success = false, message = "Unavailable connection." });
 			}
+
+			var userIdStr = User.FindFirst("UserId")?.Value
+				  ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			if (!int.TryParse(userIdStr, out var userId))
+			{
+				return Json(new { success = false, message = "User information cannot be readen." });
+			}
+
 
 			var completed = (from h in _db.OrdersHistories
 							 join d in _db.OrdersDetails on h.OrderDetailId equals d.Id
@@ -109,6 +118,7 @@ namespace CustomerManagementSystem.Controllers
 							 where h.StatusId == 5
 								   && d.IsDeleted == false
 								   && o.IsDeleted == false
+								   && d.SupplierId == userId
 							 orderby h.Date descending
 							 select new
 							 {
@@ -136,6 +146,67 @@ namespace CustomerManagementSystem.Controllers
 				success = true,
 				totalCompleted = completed.Count,
 				data = completed
+			});
+		}
+		[HttpGet]
+		public JsonResult GetReturningAndNewCustomersChartData()
+		{
+			var usertypeId = User.FindFirst("UserTypeId")?.Value;
+			if (usertypeId != "1")
+			{
+				return Json(new { success = false, message = "Unavailable access" });
+			}
+
+			// BUGÜN + SON 7 GÜN
+			DateTime today = DateTime.Today;
+			DateTime startDate = today.AddDays(-6); // toplam 7 gün
+
+			// Tüm session'ları al
+			var sessions = _db.Sessions
+				.Where(s => s.EnterTime.Date >= startDate && s.EnterTime.Date <= today)
+				.Select(s => new
+				{
+					s.CustomerId,
+					s.EnterTime
+				})
+				.ToList();
+
+			if (!sessions.Any())
+			{
+				return Json(new { success = true, data = new List<object>() });
+			}
+
+			// HER CUSTOMER İÇİN ESKİ / YENİ
+			var customerStatus = _db.Sessions
+				.GroupBy(s => s.CustomerId)
+				.Select(g => new
+				{
+					CustomerId = g.Key,
+					IsOld = g.Count() > 1
+				})
+				.ToDictionary(x => x.CustomerId, x => x.IsOld);
+
+			// GÜN BAZLI HESAPLAMA
+			var dailyData = sessions
+				.GroupBy(s => s.EnterTime.Date)
+				.Select(g =>
+				{
+					var distinctCustomers = g.Select(x => x.CustomerId).Distinct().ToList();
+
+					return new
+					{
+						Day = g.Key.Day,
+						ReturningCustomers = distinctCustomers.Count(cid => customerStatus[cid]),
+						NewCustomers = distinctCustomers.Count(cid => !customerStatus[cid])
+					};
+				})
+				.OrderBy(x => x.Day)
+				.ToList();
+
+			return Json(new
+			{
+				success = true,
+				data = dailyData
 			});
 		}
 

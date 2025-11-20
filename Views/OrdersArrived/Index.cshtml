@@ -86,7 +86,7 @@
     </div>
 
 
-    
+
     <script>
         $(document).ready(function () {
             $.ajax({
@@ -107,18 +107,33 @@
                             orderable: false,
                             render: function () {
                                 return `
-                        <div class="dropdown">
-                            <button class="btn btn-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item bg-primary text-light ordersInfo"  href="#"><i class="fa-solid fa-info --bg-primary" ></i> Informations</a></li>
-                                <li><a class="dropdown-item bg-success text-light ordersStatus"  href="#"><i class="fa-solid fa-chart-simple"></i> Set Status </a></li>
-                               <li><a class="dropdown-item bg-warning text-light orderHistory" href="#"><i class="fa-solid fa-angles-right"></i> OrderHistory</a></li>
-                               <li><a class="dropdown-item  bg-danger text-light deleteOrder" href="#""><i class="fa-solid fa-thrash"></i> Delete</a></li>
-
-                             </ul>
-                       </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item bg-primary text-light ordersInfo" href="#">
+                                                    <i class="fa-solid fa-info"></i> Informations
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item bg-success text-light ordersStatus" href="#">
+                                                    <i class="fa-solid fa-chart-simple"></i> Set Status
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item bg-warning text-light orderHistory" href="#">
+                                                    <i class="fa-solid fa-angles-right"></i> OrderHistory
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item bg-danger text-light deleteOrder" href="#">
+                                                    <i class="fa-solid fa-trash"></i> Delete
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 `;
                             }
                         });
@@ -127,12 +142,13 @@
                             $('#myTable').DataTable().clear().destroy();
                         }
 
-                        $('#myTable').DataTable({
+                        $('#myTable').DataTable({        
                             data: data,
                             columns: columns,
                             responsive: true,
                             autoWidth: true
                         });
+                        console.log(data)
                     } else {
                         $('#myTable tbody').html('<tr><td colspan="100%">Veri bulunamadı</td></tr>');
                     }
@@ -144,28 +160,28 @@
             });
         });
 
-         $(document).on('click', '.deleteOrder', function (e) {
+        // DELETE ORDER
+        $(document).on('click', '.deleteOrder', function (e) {
             e.preventDefault();
 
             const row = $(this).closest('tr');
             const table = $('#myTable').DataTable();
             const rowData = table.row(row).data();
-            console.log(rowData)
+            console.log(rowData);
 
             if (confirm("Are you sure Delete this Order")) {
                 $.ajax({
                     url: '/OrdersArrived/DeleteOrder',
                     type: 'POST',
-                           data: { orderId: rowData.orderId },
+                    data: { orderId: rowData.orderId },
                     success: function (response) {
-                         console.log("rows data",response)
+                        console.log("rows data", response);
                         if (response.success) {
                             alert("Order deleted");
-                            location.reload();
                         } else {
                             alert("Something went wrong");
-                            location.reload();
                         }
+                        location.reload();
                     },
                     error: function () {
                         alert("Something went wrong.");
@@ -175,6 +191,7 @@
             }
         });
 
+        // ORDER INFO
         $(document).on("click", ".ordersInfo", function (e) {
             e.preventDefault();
 
@@ -187,7 +204,7 @@
                 type: "GET",
                 data: { id: rowData.id },
                 success: function (response) {
-                    console.log("Kullanıcı Biligiler:",response)
+                    console.log("Kullanıcı Bilgiler:", response);
                     const data = response.data;
 
                     const html = `
@@ -213,6 +230,7 @@
         let selectedOrderId = 0;
         let currentStatus = 1;
 
+        // OPEN STATUS MODAL
         $(document).on("click", ".ordersStatus", function (e) {
             e.preventDefault();
 
@@ -226,6 +244,7 @@
             $("#statusModal").modal("show");
         });
 
+        // STATUS +/-
         $("#increaseStatus").on("click", function () {
             if (currentStatus < 5) {
                 currentStatus++;
@@ -240,6 +259,7 @@
             }
         });
 
+        // CONFIRM STATUS
         $("#confirmStatus").on("click", function () {
             $.ajax({
                 url: "/OrdersArrived/SetStatusAndHistory",
@@ -256,10 +276,12 @@
                 },
                 error: function () {
                     alert("Sunucu hatası oluştu.");
+                    location.reload();
                 }
             });
         });
 
+        // ORDER HISTORY
         $(document).on("click", ".orderHistory", function (e) {
             e.preventDefault();
 
@@ -284,15 +306,19 @@
                                             <th>Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="historyTableBody">`;
+                                    <tbody id="historyTableBody">
+                        `;
 
                         response.data.forEach((item, index) => {
                             historyHtml += `
                                 <tr id="status-row-${index}">
                                     <td>${index + 1}</td>
                                     <td>${new Date(item.date).toLocaleString()}</td>
-                                    <td class="status-text" data-statusid="${item.statusId}" data-index="${index}">Loading...</td>
-                                </tr>`;
+                                    <td class="status-text" data-statusid="${item.statusId}" data-index="${index}">
+                                        Loading...
+                                    </td>
+                                </tr>
+                            `;
                         });
 
                         historyHtml += `</tbody></table></div>`;
@@ -300,9 +326,7 @@
                         $("#orderHistory").modal("show");
 
                         $(".status-text").each(function () {
-                            console.log("gelen data",$(this).data());
                             const statusId = $(this).data("statusid");
-                            const index = $(this).data("index");
                             const cell = $(this);
 
                             $.ajax({
@@ -310,15 +334,12 @@
                                 type: "GET",
                                 data: { statusId: statusId },
                                 success: function (res) {
-                                    console.log(res)
-                                        if (res.success) {
+                                    if (res.success) {
                                         const statusText = res.data;
                                         cell.text(statusText);
-                                         }
-                                         else
-                                         {
+                                    } else {
                                         cell.text("Unknown");
-                                        }
+                                    }
                                 },
                                 error: function () {
                                     cell.text("Error");
@@ -327,17 +348,24 @@
                         });
 
                     } else {
-                        $("#orderHistory .modal-body").html(`<div class="alert alert-info">No order history found for this item.</div>`);
+                        $("#orderHistory .modal-body").html(`
+                            <div class="alert alert-info">
+                                No order history found for this item.
+                            </div>
+                        `);
                         $("#orderHistory").modal("show");
                     }
                 },
                 error: function () {
-                    $("#orderHistory .modal-body").html(`<div class="alert alert-danger">Error retrieving order history.</div>`);
+                    $("#orderHistory .modal-body").html(`
+                        <div class="alert alert-danger">
+                            Error retrieving order history.
+                        </div>
+                    `);
                     $("#orderHistory").modal("show");
                 }
             });
         });
-
     </script>
 
 </body>
