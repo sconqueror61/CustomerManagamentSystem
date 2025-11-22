@@ -85,9 +85,26 @@ namespace CustomerManagementSystem.Controllers
 					userId = parsed;
 			}
 
+			// 2) userId varsa TempData'ya yaz + Session tablosunu güncelle
 			if (userId is not null)
+			{
 				TempData["LastLoggedOutUserId"] = userId.Value;
 
+				// 2.a) Bu kullanıcıya ait, ExitTime'ı henüz dolmamış en son session'ı bul
+				var latestSession = await _db.Sessions
+					.Where(s => s.CustomerId == userId.Value && s.ExitTime == null)
+					.OrderByDescending(s => s.EnterTime)
+					.FirstOrDefaultAsync();
+
+				// 2.b) Varsa ExitTime set et
+				if (latestSession is not null)
+				{
+					latestSession.ExitTime = DateTime.Now; // veya DateTime.UtcNow
+					await _db.SaveChangesAsync();
+				}
+			}
+
+			// 3) Cookie + path temizliği
 			await FlushCookiePathsAsync();
 
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
