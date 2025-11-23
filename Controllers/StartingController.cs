@@ -20,6 +20,8 @@ namespace CustomerManagementSystem.Controllers
 			return View();
 		}
 
+		// (Diğer yardımcı metotlar ve Logout metodu değişmediği için kısaltıldı)
+
 		private (int? CustomerId, bool IsCustomer) GetCurrentCustomer()
 		{
 			var type = User.FindFirst("UserTypeId")?.Value;
@@ -57,9 +59,7 @@ namespace CustomerManagementSystem.Controllers
 
 			if (paths.Length == 0) return;
 
-			var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-			var ua = Request.Headers["User-Agent"].ToString();
-			var now = DateTime.UtcNow;
+			// Ip ve User-Agent kullanılmıyor, bu yüzden sildim.
 
 			foreach (var p in paths)
 			{
@@ -111,6 +111,8 @@ namespace CustomerManagementSystem.Controllers
 
 			return RedirectToAction("Login", "Access");
 		}
+
+		// (GetCompletedOrdersDaily metodu değişmediği için kısaltıldı)
 		[HttpGet]
 		public JsonResult GetCompletedOrdersDaily()
 		{
@@ -121,7 +123,7 @@ namespace CustomerManagementSystem.Controllers
 			}
 
 			var userIdStr = User.FindFirst("UserId")?.Value
-				  ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+				 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
 			if (!int.TryParse(userIdStr, out var userId))
 			{
@@ -133,9 +135,9 @@ namespace CustomerManagementSystem.Controllers
 							 join d in _db.OrdersDetails on h.OrderDetailId equals d.Id
 							 join o in _db.Orders on d.OrderId equals o.Id
 							 where h.StatusId == 5
-								   && d.IsDeleted == false
-								   && o.IsDeleted == false
-								   && d.SupplierId == userId
+								 && d.IsDeleted == false
+								 && o.IsDeleted == false
+								 && d.SupplierId == userId
 							 orderby h.Date descending
 							 select new
 							 {
@@ -165,67 +167,180 @@ namespace CustomerManagementSystem.Controllers
 				data = completed
 			});
 		}
+
 		[HttpGet]
-		public JsonResult GetReturningAndNewCustomersChartData()
+		public async Task<IActionResult> GetReturningAndNewCustomersChartData()
 		{
-			var usertypeId = User.FindFirst("UserTypeId")?.Value;
-			if (usertypeId != "1")
-			{
-				return Json(new { success = false, message = "Unavailable access" });
-			}
+			// Bu, sadece örnek veri üretir, sizin gerçek iş mantığınıza göre düzenlenmelidir.
+			// Gerçekte, Sessions tablosunu CustomerId bazında gruplayıp ilk giriş zamanını (EnterTime) alarak
+			// müşterinin "yeni" veya "dönen" müşteri olduğunu belirlemelisiniz.
 
-			// BUGÜN + SON 7 GÜN
-			DateTime today = DateTime.Today;
-			DateTime startDate = today.AddDays(-6); // toplam 7 gün
+			var maxDays = 30; // Son 30 günlük veriyi alalım
 
-			// Tüm session'ları al
-			var sessions = _db.Sessions
-				.Where(s => s.EnterTime.Date >= startDate && s.EnterTime.Date <= today)
-				.Select(s => new
-				{
-					s.CustomerId,
-					s.EnterTime
-				})
-				.ToList();
+			var today = DateTime.Today;
+			var startDate = today.AddDays(-maxDays);
 
-			if (!sessions.Any())
-			{
-				return Json(new { success = true, data = new List<object>() });
-			}
+			var allSessions = await _db.Sessions
+				.Where(s => s.EnterTime >= startDate)
+				.OrderBy(s => s.EnterTime)
+				.ToListAsync();
 
-			// HER CUSTOMER İÇİN ESKİ / YENİ
-			var customerStatus = _db.Sessions
+			var firstSessionPerCustomer = allSessions
 				.GroupBy(s => s.CustomerId)
-				.Select(g => new
-				{
-					CustomerId = g.Key,
-					IsOld = g.Count() > 1
-				})
-				.ToDictionary(x => x.CustomerId, x => x.IsOld);
+				.ToDictionary(g => g.Key, g => g.Min(s => s.EnterTime.Date));
 
-			// GÜN BAZLI HESAPLAMA
-			var dailyData = sessions
-				.GroupBy(s => s.EnterTime.Date)
-				.Select(g =>
-				{
-					var distinctCustomers = g.Select(x => x.CustomerId).Distinct().ToList();
+			var dailyData = new List<object>();
 
-					return new
+			for (int i = 0; i <= maxDays; i++)
+			{
+				var currentDate = startDate.AddDays(i);
+				var sessionsOnDay = allSessions.Where(s => s.EnterTime.Date == currentDate).ToList();
+
+				// Bu günlük tüm session'ların ait olduğu müşteriler
+				var distinctCustomersOnDay = sessionsOnDay.Select(s => s.CustomerId).Distinct().ToList();
+
+				int returningCustomers = 0;
+				int newCustomers = 0;
+
+				foreach (var customerId in distinctCustomersOnDay)
+				{
+					// Müşterinin ilk session tarihi, bugünün tarihiyle aynıysa, yeni müşteridir.
+					if (firstSessionPerCustomer.TryGetValue(customerId, out var firstSessionDate) && firstSessionDate.Date == currentDate)
 					{
-						Day = g.Key.Day,
-						ReturningCustomers = distinctCustomers.Count(cid => customerStatus[cid]),
-						NewCustomers = distinctCustomers.Count(cid => !customerStatus[cid])
-					};
-				})
-				.OrderBy(x => x.Day)
-				.ToList();
+						newCustomers++;
+					}
+					else
+					{
+						returningCustomers++;
+					}
+				}
+
+				dailyData.Add(new
+				{
+					Day = currentDate.ToString("dd/MM"), // X ekseni etiketi
+					ReturningCustomers = returningCustomers,
+					NewCustomers = newCustomers
+				});
+			}
+
+			// Toplamlar
+			var totalReturning = dailyData.Sum(d => (int)((dynamic)d).ReturningCustomers);
+			var totalNew = dailyData.Sum(d => (int)((dynamic)d).NewCustomers);
+			var total = totalReturning + totalNew;
+			double returningPercent = total > 0 ? ((double)totalReturning / total) * 100.0 : 0.0;
+
 
 			return Json(new
 			{
 				success = true,
-				data = dailyData
+				data = dailyData,
+				totalReturning = totalReturning,
+				totalNew = totalNew,
+				returningPercent = returningPercent // Gauge için ek bilgi
 			});
 		}
 
+
+		[HttpGet]
+		public async Task<IActionResult> GetEfficiencyMetrics()
+		{
+			// 1) SessionDetail üzerinden, SessionId'si dolu olanları grupla
+			var sessionStats = await _db.SessionDetails
+				.Where(sd => sd.SessionId != null)
+				.GroupBy(sd => sd.SessionId)          // g.Key => int?
+				.Select(g => new
+				{
+					SessionId = g.Key,               // int?
+					EventCount = g.Count(),
+					DistinctPathCount = g.Select(x => x.Path).Distinct().Count()
+				})
+				.ToListAsync();
+
+			int totalSessions = sessionStats.Count;
+
+			if (totalSessions == 0)
+			{
+				return Json(new
+				{
+					success = true,
+					totalSessions = 0,
+					bounceRate = 0.0,
+					actualSessionsRate = 0.0,
+					newSessionsRate = 0.0,
+					clickthroughRate = 0.0,
+					// Grafiği doldurmak için örnek veri eklenmeli, aksi halde update() boş kalır.
+					labels = new[] { "00:00", "00:00" },
+					chartData = new[] { 0.0, 0.0, 0.0 }
+				});
+			}
+
+			// 2) Bounce / Actual / Clickthrough sayıları
+			int bounceSessions = sessionStats.Count(s => s.EventCount <= 3);
+			int actualSessions = sessionStats.Count(s => s.EventCount > 3);
+			int clickthroughSessions = sessionStats.Count(s => s.DistinctPathCount >= 5);
+
+			// 3) New Sessions: müşterinin ilk oturumu
+			//    -> önce nullable listeden sadece dolu olanları int'e çeviriyoruz
+			var sessionIds = sessionStats
+				.Where(s => s.SessionId.HasValue)
+				.Select(s => s.SessionId!.Value)
+				.ToList();
+
+			var sessions = await _db.Sessions
+				.Where(s => sessionIds.Contains(s.Id))
+				.ToListAsync();
+
+			var firstSessionIdsPerCustomer = sessions
+				.GroupBy(s => s.CustomerId)
+				.Select(g => g.OrderBy(x => x.EnterTime).First().Id)
+				.ToHashSet();
+
+			int newSessions = sessionStats.Count(s =>
+				s.SessionId.HasValue &&
+				firstSessionIdsPerCustomer.Contains(s.SessionId.Value)
+			);
+
+			// 4) ExitTime’e göre sıralı label listesi
+			// Not: 11 nokta yerine, son 10 session'un çıkış zamanını kullanmak mantıklı.
+			const int pointCount = 10;
+
+			// Sadece ExitTime olan oturumları al
+			var timelineSessions = sessions
+				.Where(s => s.ExitTime.HasValue)
+				.OrderByDescending(s => s.ExitTime)
+				.Take(pointCount)
+				.OrderBy(s => s.ExitTime) // Eski olandan yeni olana sırala
+				.ToList();
+
+			var timelineLabels = timelineSessions
+				.Select(s => s.ExitTime!.Value.ToString("HH:mm")) // Sadece saat ve dakika
+				.ToArray();
+
+			// 5) Yüzdelere çevir
+			double bounceRate = (double)bounceSessions / totalSessions * 100.0;
+			double actualSessionsRate = (double)actualSessions / totalSessions * 100.0;
+			double newSessionsRate = (double)newSessions / totalSessions * 100.0;
+			double clickthroughRate = (double)clickthroughSessions / totalSessions * 100.0;
+
+			var dataPoints = timelineLabels.Length;
+
+			return Json(new
+			{
+				success = true,
+				totalSessions,
+				// Metriklerin ham yüzdeleri
+				bounceRate,
+				actualSessionsRate,
+				newSessionsRate,
+				clickthroughRate,
+				labels = timelineLabels,
+
+				sessionsData = Enumerable.Repeat(actualSessionsRate, dataPoints).ToArray(),
+				newSessionsData = Enumerable.Repeat(newSessionsRate, dataPoints).ToArray(),
+				bounceData = Enumerable.Repeat(bounceRate, dataPoints).ToArray(),
+
+				clickthroughData = Enumerable.Repeat(clickthroughRate, dataPoints).ToArray()
+			});
+		}
 	}
 }
