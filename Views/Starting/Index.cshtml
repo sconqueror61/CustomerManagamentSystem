@@ -3,16 +3,19 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<script src="~/jquery/dist/jquery.min.js"></script>
+	<!-- Not: Kendi ortamınızda ~/jquery/dist/jquery.min.js çalışmıyorsa CDN kullanın -->
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 	<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 	<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-	<link href="~/font-awesome/all.min.css" rel="stylesheet" />
+	<!-- Not: Kendi ortamınızda font-awesome yolu çalışmıyorsa CDN kullanıyorsanız bu yolu kullanın -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
 	<style>
 		body {
-			background-color: #f4f6f9;
+			background-color: #f4ff9;
 			font-family: 'Roboto', sans-serif;
 			padding-bottom: 50px;
 		}
@@ -57,22 +60,63 @@
 <body>
 	<div class="container-fluid mt-4">
 		<div class="row mb-4">
+			<div class="row">
+				<!-- KPI KARTLARI -->
+				<div class="col-xl-3 col-lg-6 mb-3" data-aos="fade-down" data-aos-delay="100">
+					<div class="card h-100 p-3 shadow-sm border-0">
+						<div class="card-body">
+							<h6 class="text-muted text-uppercase mt-0">Total Revenue</h6>
+							<h2 class="display-5 fw-bold text-primary" id="totalRevenue">Loading</h2>
+							<div class="d-flex align-items-center gap-2">
+								<span class="badge bg-success fs-6">$</span>
+								<span class="text-muted">Supplier Revenue</span>
+							</div>
+						</div>
+					</div>
+				</div>
 
-			<div class="col-xl-3 col-lg-6 mb-3" data-aos="fade-down" data-aos-delay="100">
-				<div class="card h-100 p-3 shadow-sm border-0">
-					<div class="card-body">
-						<h6 class="text-muted text-uppercase mt-0">Orders (Genel Bakış)</h6>
-						<h2 class="display-5 fw-bold text-primary">38.726</h2>
-						<div class="d-flex align-items-center gap-2">
-							<span class="badge bg-success fs-6">+115%</span>
-							<span class="text-muted">Seyfullah DEMİRCİ</span>
+				<div class="col-xl-3 col-lg-6 mb-3" data-aos="fade-down" data-aos-delay="200">
+					<div class="card h-100 p-3 shadow-sm border-0">
+						<div class="card-body">
+							<h6 class="text-muted text-uppercase mt-0">Total Orders</h6>
+							<h2 class="display-5 fw-bold text-primary" id="totalOrders">Loading</h2>
+							<div class="d-flex align-items-center gap-2">
+								<span class="badge bg-primary fs-6">Amount</span>
+								<span class="text-muted">Number of Sales</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-xl-3 col-lg-6 mb-3" data-aos="fade-down" data-aos-delay="300">
+					<div class="card h-100 p-3 shadow-sm border-0">
+						<div class="card-body">
+							<h6 class="text-muted text-uppercase mt-0">Average Basket Amount</h6>
+							<h2 class="display-5 fw-bold text-primary" id="averageBasketAmount">Loading</h2>
+							<div class="d-flex align-items-center gap-2">
+								<span class="badge bg-warning text-dark fs-6">$</span>
+								<span class="text-muted">Per Order</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-xl-3 col-lg-6 mb-3" data-aos="fade-down" data-aos-delay="400">
+					<div class="card h-100 p-3 shadow-sm border-0">
+						<div class="card-body">
+							<h6 class="text-muted text-uppercase mt-0">Total Profit</h6>
+							<h2 class="display-5 fw-bold text-primary" id="totalProfit">Loading</h2>
+							<div class="d-flex align-items-center gap-2">
+								<span class="badge bg-success fs-6" id="profitBadge">TL</span>
+								<span class="text-muted">Net Gain</span>
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-
 		</div>
 
+		<!-- Diğer Grafikler -->
 		<div class="col-xl-12 col-lg-6 mb-3" data-aos="fade-down" data-aos-delay="200">
 			<div class="dashboard-panel h-100">
 				<h4 class="fw-bold mb-3">Weekly Sales Performance</h4>
@@ -81,7 +125,6 @@
 		</div>
 
 		<div class="row">
-
 			<div class="col-lg-6 mb-4" data-aos="fade-up">
 				<div class="dashboard-panel">
 					<div class="d-flex justify-content-between align-items-start mb-3">
@@ -105,7 +148,6 @@
 							</div>
 						</div>
 					</div>
-
 					<canvas id="returningAreaChart"></canvas>
 				</div>
 			</div>
@@ -158,7 +200,91 @@
 		var returningAreaChart;
 		var gaugeChart;
 		var efficiencyAreaChart;
-		var monthlyBarChart; // Bu zaten yukarıda tanımlanmış, ama burada global yapalım.
+		var monthlyBarChart;
+
+		// API Yolları Global Olarak Tanımlandı
+		const apiUrlProfit = '/Starting/GetAllInformationsAboutProfits';
+		const apiUrlOrdersDaily = "/Starting/GetCompletedOrdersDaily";
+		const apiUrlCustomers = '/Starting/GetReturningAndNewCustomersChartData';
+		const apiUrlMetrics = '/Starting/GetEfficiencyMetrics';
+
+
+		/**
+		 * AJAX isteği ile sunucudan kâr verilerini çeker ve kartları günceller.
+		 */
+		function loadProfitData() {
+
+			function updateCardText(selector, text) {
+				$(selector).text(text);
+			}
+
+			$.ajax({
+				type: "GET",
+				// Global olarak tanımlanan yolu kullan
+				url: "/Starting/GetAllInformationsAboutProfits",
+				dataType: "json",
+				beforeSend: function() {
+					$('.display-5').text('Yükleniyor...');
+				},
+				success: function (response) {
+					if (response.success && response.data) {
+						const data = response.data;
+
+						// HATA AYIKLAMA İÇİN: Veri nesnesini konsola yazdır.
+						console.log("Gelen Data Nesnesi:", data);
+
+						// Gelen verilerde varsayılan değerleri ayarlayarak güvenli erişim
+						const totalRevenueValue = data.totalRevenue;
+						const totalOrdersValue = data.totalOrders;
+						const averageBasketAmountValue = data.averageBasketAmount;
+						const totalProfitValue = data.totalProfit;
+
+						// 1. Verileri Kartlara Yerleştirme
+						updateCardText('#totalRevenue', totalRevenueValue);
+						updateCardText('#totalOrders', totalOrdersValue);
+						updateCardText('#averageBasketAmount', averageBasketAmountValue);
+						updateCardText('#totalProfit', totalProfitValue);
+
+						// 2. Kâr Kontrolü ve Renk Güncellemesi
+
+						// TR formatını (örn: 1.234,56) JS formatına (1234.56) çevir.
+						// String(value) ile undefined veya null durumunda güvenli dönüşüm sağlanır.
+						const profitValueStr = String(totalProfitValue).replace(/\./g, '').replace(',', '.');
+						const profitValue = parseFloat(profitValueStr);
+
+						const $profitText = $('#totalProfit');
+						const $profitBadge = $('#profitBadge');
+
+						// Hata ayıklama satırı: Eğer dönüşüm yine başarısız olursa, konsola bilgi ver.
+						if (isNaN(profitValue)) {
+							console.error("Hata: Toplam Kâr değeri sayısal olarak dönüştürülemedi. İşlenmemiş değer:", totalProfitValue);
+							$profitText.text('HATA (Format)');
+							return; // Dönüşüm hatası varsa devam etme
+						}
+
+						if (profitValue < 0) {
+							$profitText.removeClass('text-primary').addClass('text-danger');
+							$profitBadge.removeClass('bg-success').addClass('bg-danger').text('Zarar');
+						} else {
+							$profitText.removeClass('text-danger').addClass('text-primary');
+							$profitBadge.removeClass('bg-danger').addClass('bg-success').text('TL');
+						}
+
+					} else {
+						// Sunucudan success: false geldiyse (Yetki Hatası vb.)
+						updateCardText('.display-5', 'Hata');
+						$('.text-muted').text(response.message || "Bilinmeyen sunucu hatası.");
+						console.error("Yetki veya Veri Hatası:", response.message);
+					}
+				},
+				error: function (xhr, status, error) {
+					// AJAX isteği genel hata aldıysa (404, 500, Bağlantı Kesilmesi)
+					updateCardText('.display-5', 'API Hatası');
+					$('.text-muted').text("Sunucuya ulaşılamıyor.");
+					console.error("AJAX İsteği Başarısız:", status, error, xhr.responseText);
+				}
+			});
+		}
 
 		$(document).ready(function () {
 			// AOS animasyonları
@@ -166,20 +292,23 @@
 				AOS.init();
 			}
 
+			// KAR KISMI YÜKLENİYOR
+			loadProfitData();
+
 			// --- 1. WEEKLY BAR CHART (monthlyBarChart) ---
 			function loadMonthlyBarChart() {
 				var weeklyLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 				var weeklyTotals = [0, 0, 0, 0, 0, 0, 0];
 
 				$.ajax({
-					url: "/Starting/GetCompletedOrdersDaily",
+					// Global olarak tanımlanan yolu kullan
+					url: apiUrlOrdersDaily,
 					type: "GET",
 					success: function (res) {
 						if (res.success && res.data) {
 							console.log("GetCompletedOrdersDaily response:", res.data);
 
 							$.each(res.data, function (i, item) {
-								// Sunucu tarafından gelen tarih alanlarını kontrol et
 								var dateSource = item.date || item.orderDate || item.Date || item.OrderDate;
 								var dt = dateSource ? new Date(dateSource) : null;
 								if (!dt || isNaN(dt.getTime())) return;
@@ -187,9 +316,10 @@
 								var dayIndex = dt.getDay(); // 0=Sunday, 1=Monday...
 								var lineTotal = item.lineTotal ?? item.LineTotal ?? 0;
 
-								// LineTotal'ın sayı olduğundan emin ol
-								if (typeof lineTotal === 'number' && isFinite(lineTotal)) {
-									weeklyTotals[dayIndex] += lineTotal;
+								// LineTotal'ın sayı olduğundan emin ol ve topla
+								var lineTotalNumber = parseFloat(lineTotal);
+								if (!isNaN(lineTotalNumber)) {
+									weeklyTotals[dayIndex] += lineTotalNumber;
 								}
 							});
 						} else {
@@ -251,7 +381,8 @@
 				if (!returningCtx || !gaugeChartCtx) return;
 
 				$.ajax({
-					url: '/Starting/GetReturningAndNewCustomersChartData',
+					// Global olarak tanımlanan yolu kullan
+					url: apiUrlCustomers,
 					type: 'GET',
 					success: function (res) {
 						if (!res.success || !res.data) {
@@ -263,22 +394,16 @@
 
 						var data = res.data || [];
 
-						// X ekseni: gün numaraları
 						var labelsTarget = data.map(function (x) { return x.Day ?? x.day; });
-
-						// Y ekseni: veri
 						var returningData = data.map(function (x) { return x.ReturningCustomers ?? x.returningCustomers; });
 						var newData = data.map(function (x) { return x.NewCustomers ?? x.newCustomers; });
 
-						// Gauge oranı (C# tarafından hesaplanmış değer kullanılır)
 						var returningPercent = Math.round(res.returningPercent ?? 0);
 						var remainingPercent = 100 - returningPercent;
 
-						// Eski grafik varsa yok et
 						if (returningAreaChart) returningAreaChart.destroy();
 						if (gaugeChart) gaugeChart.destroy();
 
-						// Line chart (Old/New customer)
 						returningAreaChart = new Chart(returningCtx, {
 							type: 'line',
 							data: {
@@ -309,7 +434,7 @@
 								plugins: { legend: { display: false } },
 								scales: {
 									y: {
-										display: true, // Y eksenini gösterelim
+										display: true,
 										beginAtZero: true
 									},
 									x: {
@@ -322,7 +447,6 @@
 							}
 						});
 
-						// Gauge chart
 						gaugeChart = new Chart(gaugeChartCtx, {
 							type: 'doughnut',
 							data: {
@@ -351,7 +475,6 @@
 							}
 						});
 
-						// Ortadaki yazıyı dinamik güncelle
 						$('#returningGaugeText').text(returningPercent + '%');
 					},
 					error: function (err) {
@@ -367,16 +490,15 @@
 			if (efficiencyCanvas) {
 				var efficiencyAreaChartCtx = efficiencyCanvas.getContext('2d');
 
-				// İlk başta boş bir grafik oluşturuluyor
 				efficiencyAreaChart = new Chart(efficiencyAreaChartCtx, {
 					type: 'line',
 					data: {
 						labels: [],
 						datasets: [
 							{
-								label: 'Actual Sessions', // Başlık düzeltildi
+								label: 'Actual Sessions',
 								data: [],
-								borderColor: '#0d6efd', // Mavi
+								borderColor: '#0d6efd',
 								backgroundColor: 'rgba(13, 110, 253, 0.2)',
 								fill: true,
 								tension: 0.4,
@@ -386,7 +508,7 @@
 							{
 								label: 'New Sessions',
 								data: [],
-								borderColor: '#6f42c1', // Mor
+								borderColor: '#6f42c1',
 								backgroundColor: 'rgba(111, 66, 193, 0.2)',
 								fill: true,
 								tension: 0.4,
@@ -396,14 +518,13 @@
 							{
 								label: 'Bounce Rate',
 								data: [],
-								borderColor: '#ffc107', // Sarı
+								borderColor: '#ffc107',
 								backgroundColor: 'rgba(255, 193, 7, 0.2)',
 								fill: true,
 								tension: 0.4,
 								pointRadius: 2,
 								pointBackgroundColor: '#ffc107',
 							},
-							// Clickthrough Rate eklenmedi (çok kalabalık olmaması için). İstenirse eklenebilir.
 						]
 					},
 					options: {
@@ -412,7 +533,7 @@
 						scales: {
 							y: {
 								beginAtZero: true,
-								stacked: false, // Yığılmış olmasın, daha net görünür
+								stacked: false,
 								max: 100,
 								title: { display: true, text: 'Rate (%)' },
 								ticks: {
@@ -439,7 +560,8 @@
 				if (!efficiencyAreaChart) return;
 
 				$.ajax({
-					url: '/Starting/GetEfficiencyMetrics',
+					// Global olarak tanımlanan yolu kullan
+					url: apiUrlMetrics,
 					type: 'GET',
 					success: function (res) {
 						if (!res || !res.success) {
@@ -450,20 +572,17 @@
 						console.log("GetEfficiencyMetrics response:", res);
 
 						// 1. KPI Kartlarını Güncelle
-						$('#bounceRateValue').text(res.bounceRate.toFixed(2) + '%');
-						$('#actualSessionsValue').text(res.actualSessionsRate.toFixed(2) + '%');
-						$('#newSessionsValue').text(res.newSessionsRate.toFixed(2) + '%');
-						$('#clickthroughValue').text(res.clickthroughRate.toFixed(2) + '%'); // Clickthrough da güncellendi
+						$('#bounceRateValue').text(res.bounceRate?.toFixed(2) + '%' || '--%');
+						$('#actualSessionsValue').text(res.actualSessionsRate?.toFixed(2) + '%' || '--%');
+						$('#newSessionsValue').text(res.newSessionsRate?.toFixed(2) + '%' || '--%');
+						$('#clickthroughValue').text(res.clickthroughRate?.toFixed(2) + '%' || '--%');
 
 						// 2. Grafik Verilerini Güncelle
 						efficiencyAreaChart.data.labels = res.labels || [];
 
-						// C# tarafından gelen dizileri doğrudan ata
-						efficiencyAreaChart.data.datasets[0].data = res.sessionsData || []; // Actual Sessions
-						efficiencyAreaChart.data.datasets[1].data = res.newSessionsData || []; // New Sessions
-						efficiencyAreaChart.data.datasets[2].data = res.bounceData || []; // Bounce Rate
-
-						// Clickthrough'u grafiğe eklemedik (çok kalabalık olmaması için), ama istersek eklenebilir.
+						efficiencyAreaChart.data.datasets[0].data = res.sessionsData || [];
+						efficiencyAreaChart.data.datasets[1].data = res.newSessionsData || [];
+						efficiencyAreaChart.data.datasets[2].data = res.bounceData || [];
 
 						efficiencyAreaChart.update();
 					},
@@ -485,6 +604,5 @@
 
 		});
 	</script>
-
 </body>
 </html>

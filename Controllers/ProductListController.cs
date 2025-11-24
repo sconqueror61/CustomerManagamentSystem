@@ -108,6 +108,7 @@ namespace CustomerManagementSystem.Controllers
 								.ToList(),
 							p.Stock,
 							p.CreaterUserId,
+							p.Cost
 						});
 					if (categoryid != null)
 					{
@@ -227,6 +228,7 @@ namespace CustomerManagementSystem.Controllers
 			existingProduct.Explanation = updatedProduct.Explanation;
 			existingProduct.Description = updatedProduct.Description;
 			existingProduct.Stock = updatedProduct.Stock;
+			existingProduct.Cost = updatedProduct.Cost;
 			updatedProduct.CreaterUserId = UserId.Value;
 			_dbContext.SaveChanges();
 

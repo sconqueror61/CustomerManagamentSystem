@@ -123,6 +123,7 @@ public partial class CustomerManagementSystemContext : DbContext
         {
             entity.Property(e => e.Breakibility).HasColumnName("breakibility");
             entity.Property(e => e.CategoryId).HasColumnName("categoryId");
+            entity.Property(e => e.Cost).HasColumnName("cost");
             entity.Property(e => e.CreaterUserId).HasColumnName("createrUserID");
             entity.Property(e => e.Description)
                 .HasMaxLength(150)

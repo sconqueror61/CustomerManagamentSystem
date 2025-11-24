@@ -171,10 +171,6 @@ namespace CustomerManagementSystem.Controllers
 		[HttpGet]
 		public async Task<IActionResult> GetReturningAndNewCustomersChartData()
 		{
-			// Bu, sadece örnek veri üretir, sizin gerçek iş mantığınıza göre düzenlenmelidir.
-			// Gerçekte, Sessions tablosunu CustomerId bazında gruplayıp ilk giriş zamanını (EnterTime) alarak
-			// müşterinin "yeni" veya "dönen" müşteri olduğunu belirlemelisiniz.
-
 			var maxDays = 30; // Son 30 günlük veriyi alalım
 
 			var today = DateTime.Today;
@@ -341,6 +337,79 @@ namespace CustomerManagementSystem.Controllers
 
 				clickthroughData = Enumerable.Repeat(clickthroughRate, dataPoints).ToArray()
 			});
+		}
+		[HttpGet]
+		public JsonResult GetAllInformationsAboutProfits()
+		{
+			// 1. Kullanıcı Tipi Kontrolü
+			var userType = User.FindFirst("UserTypeId")?.Value;
+			if (userType != "1")
+			{
+				return Json(new { success = false, message = "Erişim yetkiniz bulunmamaktadır." });
+			}
+
+			// 2. Kullanıcı ID'sini Alma
+			var userIdStr = User.FindFirst("UserId")?.Value
+				 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			if (!int.TryParse(userIdStr, out var userId))
+			{
+				return Json(new { success = false, message = "Kullanıcı bilgisi okunamıyor." });
+			}
+
+			// 3. Tedarikçiye Ait Sipariş Detaylarını, Siparişleri (Orders) ve Ürünleri Birleştirme
+			var profitsData = (from od in _db.OrdersDetails.Where(od => od.SupplierId == userId)
+								   // HATA BURADAYDI! OrdersDetails yerine Orders tablosu ile birleştirme yapılmalı.
+							   join o in _db.Orders on od.OrderId equals o.Id
+
+							   // Product tablosu ile birleştirme (Product tablosunda birincil anahtarın Id olduğunu varsayıyoruz)
+							   join p in _db.Products on od.ProductId equals p.Id
+							   select new
+							   {
+								   OrderId = od.OrderId,
+								   OrderTotalPrice = o.TotalPrice, // ARTIK DOĞRU! Orders tablosundan TotalPrice alındı.
+								   ProductCost = p.Cost,
+								   OrderAmount = od.Amount,
+								   LineCost = od.Amount * p.Cost
+							   }).ToList(); // Veriyi belleğe çek
+
+			if (!profitsData.Any())
+			{
+				return Json(new { success = true, data = new { TotalRevenue = "0,00", TotalOrders = "0", AverageBasketAmount = "0,00", TotalProfit = "0,00" } });
+			}
+
+			// Toplam Ciro Hesaplaması
+			var distinctOrdersData = profitsData
+				.GroupBy(x => x.OrderId)
+				.Select(g => new { OrderTotalPrice = g.First().OrderTotalPrice })
+				.ToList();
+
+			// Hata Giderme: Sum işleminde OrderTotalPrice alanını decimal'e dönüştürerek 
+			// (decimal) veya boş değer alıyorsa GetValueOrDefault() ile güvenlik sağlayın.
+			decimal totalRevenue = distinctOrdersData.Sum(x => ((decimal?)x.OrderTotalPrice).GetValueOrDefault());
+
+			// Toplam Sipariş Sayısı
+			int totalOrders = distinctOrdersData.Count();
+
+			// Ortalama Sepet Tutarı (Bölme sıfır kontrolü)
+			decimal averageBasketAmount = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+			// Hata Giderme: LineCost alanını da aynı şekilde güvenli hale getirin.
+			decimal totalCost = profitsData.Sum(x => ((decimal?)x.LineCost).GetValueOrDefault());
+
+			// Toplam Kâr
+			decimal totalProfit = totalRevenue - totalCost;
+
+			// 5. JSON Verisini Hazırlama (Para birimi formatında)
+			var result = new
+			{
+				TotalRevenue = totalRevenue.ToString("N2"),
+				TotalOrders = totalOrders.ToString("N0"),
+				AverageBasketAmount = averageBasketAmount.ToString("N2"),
+				TotalProfit = totalProfit.ToString("N2")
+			};
+
+			return Json(new { success = true, data = result });
 		}
 	}
 }

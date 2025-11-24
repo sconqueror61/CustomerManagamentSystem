@@ -24,4 +24,6 @@ public partial class Product
     public int? Stock { get; set; }
 
     public int? CreaterUserId { get; set; }
+
+    public double? Cost { get; set; }
 }

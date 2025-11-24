@@ -138,6 +138,10 @@
                                     <label for="priceE" class="me-2" style="width: 120px;">Price:</label>
                                     <input id="priceE" type="text" class="form-control">
                                 </div>
+                                <div class="d-flex align-items-center mb-3">
+                                    <label for="costE" class="me-2" style="width: 120px;">Cost:</label>
+                                    <input id="costE" type="text" class="form-control">
+                                </div>
 
                                 <div class="d-flex align-items-center mb-3">
                                     <label for="stockE" class="me-2" style="width: 120px;">Stocked:</label>
@@ -236,7 +240,8 @@
                                  data-height="${item.height}"
                                  data-image="${firstImage}"
                                  data-stock="${item.stock}"
-                                 data-breakibility="${item.breakibility}">
+                                 data-breakibility="${item.breakibility}"
+                                 data-cost="${item.cost}">
 
                                 <div class="d-flex justify-content-center">
                                     <img src="${firstImage}" class="img-fluid mb-3 img-thumbnail" style="max-height: 200px; object-fit: cover;">
@@ -340,13 +345,14 @@
             // Verileri kontrol ederek modal alanlarına yaz
             const title = card.data("title") ?? "Undefined";
             const description = card.data("description") ?? "Undefined";
-            const price = card.data("price") != null ? `Price: $${card.data("price")}` : "Undefined";
+            const price = card.data("price") != null ? `Price: ${card.data("price")}` : "Undefined";
             const image = card.data("image") || "/images/no-image.png";
             const breakibility = card.data("breakibility") ? "Breakibility: Yes" : "Breakibility: No";
             const categoryId = card.data("categoryid") ?? "Undefined";
             const stock = card.data("stock") != null ? `Stock: ${card.data("stock")}` : "Undefined";
             const width = card.data("width") != null ? `Width: ${card.data("width")}m` : "Undefined";
             const height = card.data("height") != null ? `Height: ${card.data("height")}m` : "Undefined";
+            const cost= card.data("cost") !=null ? 'Cost: ${card.data("cost")}' : "Undefined";
 
             // Modal'a yerleştir
             $("#modalTitle").text(title);
@@ -369,6 +375,7 @@
             $("#priceE").val('');
             $("#breakibilityE").prop("checked", false);
             $("#stockE").val('');
+             $("#costE").val('');
             $("#categorySelect").val('');
 
             // Get the product ID stored in the modal's data-id
@@ -396,6 +403,7 @@
                 $("#priceE").val(data.price);
                 $("#breakibilityE").prop("checked", data.breakibility);
                 $("#stockE").val(data.stock);
+                $("#costE").val(data.stock);
                 $("#categorySelect").val(data.categoryId);
 
                 // Show the modal
@@ -416,7 +424,8 @@
                     height: $("#heightE").val(),
                     description: $("#descriptionE").val(),
                     explanation: $("#explanationE").val(),
-                    stock: $("#stockE").val()
+                    stock: $("#stockE").val(),
+                    cost: $("#costE").val()
                 };
 
                 $.post("/ProductList/UpdateProduct", updatedProduct, function () {
