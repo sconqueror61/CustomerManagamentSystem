@@ -1,180 +1,448 @@
 ﻿@{
-
+    ViewData["Title"] = "CategoryManagement";
 }
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        body {
+            background: radial-gradient(circle at top, #e3f2fd 0, #f8f9fa 45%, #e9ecef 100%);
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-wrapper {
+            flex: 1;
+            padding-top: 30px;
+            padding-bottom: 30px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: #202124;
+        }
+
+            .page-title i {
+                font-size: 1.4rem;
+                color: #0d6efd;
+            }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 0.2rem;
+        }
+
+        .card-main {
+            border-radius: 18px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+            .card-main .card-header {
+                background: linear-gradient(120deg, #0d6efd, #6610f2);
+                color: #fff;
+                padding: 1rem 1.5rem;
+            }
+
+            .card-main .card-header-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .card-main .card-header h5 {
+                margin: 0;
+                font-weight: 600;
+                font-size: 1.1rem;
+            }
+
+            .card-main .card-header span {
+                font-size: 0.9rem;
+                opacity: 0.9;
+            }
+
+        #addModalB {
+            border-radius: 999px;
+            font-weight: 600;
+            padding-inline: 1.1rem;
+        }
+
+            #addModalB i {
+                margin-right: 0.3rem;
+            }
+
+        .table-wrapper {
+            padding: 1.2rem 1.5rem 1.3rem 1.5rem;
+        }
+
+        table.table {
+            margin-bottom: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        thead.thead-primary tr {
+            background: #0d6efd;
+        }
+
+        thead.thead-primary th {
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.02em;
+        }
+
+        tbody#categoryTable tr {
+            vertical-align: middle;
+        }
+
+            tbody#categoryTable tr:nth-child(even) {
+                background-color: #f8f9fa;
+            }
+
+            tbody#categoryTable tr:hover {
+                background-color: #e7f1ff;
+            }
+
+        tbody#categoryTable td {
+            font-size: 0.9rem;
+        }
+
+        .btn-action {
+            border-radius: 999px;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+            .btn-action i {
+                margin-right: 0.25rem;
+            }
+
+        /* MODAL TASARIMLARI */
+        .modal-content {
+            border-radius: 18px;
+            border: none;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.2);
+        }
+
+        .modal-header {
+            border: none;
+            padding: 0.9rem 1.3rem;
+        }
+
+            .modal-header .modal-title {
+                font-size: 1rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+                .modal-header .modal-title i {
+                    font-size: 1rem;
+                }
+
+        .modal-body {
+            padding: 1.2rem 1.3rem 0.8rem 1.3rem;
+        }
+
+        .modal-footer {
+            border: none;
+            padding: 0.75rem 1.3rem 1.1rem 1.3rem;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+            .form-control:focus,
+            .form-select:focus {
+                box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+                border-color: #0d6efd;
+            }
+
+        .footer {
+            background: #ffffffcc;
+            backdrop-filter: blur(6px);
+        }
+
+            .footer span {
+                font-size: 0.8rem;
+            }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between mb-3">
-            <button type="button" id="addModalB" class="btn btn-outline-success">Add</button>
-        </div>
+    <div class="page-wrapper">
+        <div class="container">
+            <div class="page-header">
+                <div>
+                    <div class="page-title">
+                        <i class="fa-solid fa-layer-group"></i>
+                        Ürün Kategori Yönetimi
+                    </div>
+                    <div class="page-subtitle">
+                        Ana kategorilerinize açıklama ekleyin, düzenleyin ve yönetin.
+                    </div>
+                </div>
+                <div>
+                    <button type="button" id="addModalB" class="btn btn-success shadow-sm">
+                        <i class="fa-solid fa-plus"></i> Yeni Kategori Açıklaması
+                    </button>
+                </div>
+            </div>
 
-        <!-- Table -->
-        <table class="table table-bordered text-center">
-            <thead class="thead-primary">
-                <tr class="bg-primary">
-                    <th class="text-light">Category Name</th>
-                    <th class="text-light">Description</th>
-                    <th class="text-light">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="categoryTable"></tbody>
-        </table>
+            <div class="card card-main">
+                <div class="card-header">
+                    <div class="card-header-content">
+                        <div>
+                            <h5><i class="fa-solid fa-table-list me-1"></i> Tanımlı Kategoriler</h5>
+                            <span>Sistemde tanımlanmış kategori açıklamalarının listesi.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table table-bordered table-hover text-center align-middle mb-0">
+                        <thead class="thead-primary">
+                            <tr>
+                                <th class="text-light">Ana Kategori</th>
+                                <th class="text-light">Kategori Açıklaması</th>
+                                <th class="text-light" style="width: 180px;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoryTable">
+                            <tr><td colspan="3">Yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Add Modal -->
+    @* EKLE MODALI *@
     <div id="addModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Add</h5>
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        Yeni Kategori Açıklaması
+                    </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addForm">
-                        <div class="row">
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="categoryA">Category</label>
+                                <label for="categoryA" class="form-label">Ana Kategori</label>
                                 <select id="categoryA" class="form-select">
-                                    <option disabled selected value="">Select a category</option>
+                                    <option disabled selected value="">Ana kategori seçin</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label for="descriptionA">Description</label>
-                                <input id="descriptionA" type="text" class="form-control" placeholder="Description" >
+                                <label for="descriptionA" class="form-label">Kategori Açıklaması</label>
+                                <input id="descriptionA" type="text" class="form-control" placeholder="Ör: Küçük ebat koli">
                             </div>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer bg-primary">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Close</button>
-                    <button type="button" id="addB" class="btn btn-success"><i class="fa-solid fa-plus"></i> Add</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark"></i> Vazgeç
+                    </button>
+                    <button type="button" id="addB" class="btn btn-success">
+                        <i class="fa-solid fa-check"></i> Kaydet
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    @* DÜZENLE MODALI *@
     <div id="editModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content ">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
                 <div class="modal-header bg-warning text-white">
-                    <h5 class="modal-title">Edit</h5>
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        Kategori Açıklamasını Düzenle
+                    </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-
                     <form id="editForm">
-                        <div class="row">
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="categoryE">Category</label>
+                                <label for="categoryE" class="form-label">Ana Kategori</label>
                                 <select id="categoryE" class="form-select">
-                                    <option disabled selected value="">Select a category</option>
+                                    <option disabled selected value="">Ana kategori seçin</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label for="descriptionE">Description</label>
-                                <input id="descriptionE" type="text" class="form-control" placeholder="Description">
+                                <label for="descriptionE" class="form-label">Kategori Açıklaması</label>
+                                <input id="descriptionE" type="text" class="form-control" placeholder="Açıklamayı güncelleyin" required>
                             </div>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer bg-warning">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Close</button>
-                    <button type="button" id="editB" class="btn btn-success"><i class="fa-solid fa-arrow-up-from-bracket"></i> Upload</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark"></i> Vazgeç
+                    </button>
+                    <button type="button" id="editB" class="btn btn-warning text-white">
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i> Güncelle
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Delete Modal -->
+    @* SİL MODALI *@
     <div id="deleteModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
-                <div class="modal-header bg-danger">
-                    <h5 class="modal-title">Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Silme Onayı
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <h5>Are You Sure to Delete This Category?</h5>
+                    <p class="mb-1 fw-semibold">Bu kategori açıklamasını silmek istiyor musunuz?</p>
+                    <small class="text-muted">Bu işlem geri alınamaz.</small>
                 </div>
-                <div class="modal-footer bg-danger">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Close</button>
-                    <button type="button" id="deleteB" class="btn btn-warning"><i class="fa-solid fa-trash-can"></i> Delete</button>
+                <div class="modal-footer bg-light justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark"></i> Vazgeç
+                    </button>
+                    <button type="button" id="deleteB" class="btn btn-danger">
+                        <i class="fa-solid fa-trash-can"></i> Sil
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="c:\users\seyfu\source\repos\customermanagamentsystem\wwwroot\jquery\dist\jquery.min.js"></script>
+    <script src="c:\users\seyfu\.nuget\packages\bootstrap\5.3.3\contentfiles\any\any\wwwroot\js\bootstrap.min.js"></script>
+
     <script>
         let selectedId;
+        let addModal, editModal, deleteModal; // burada tanımla
 
         $(document).ready(function () {
+
+            // Bootstrap modallarını DOM ve scriptler hazır olunca oluştur
+            if (typeof bootstrap !== "undefined") {
+                addModal = new bootstrap.Modal(document.getElementById('addModal'));
+                editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            } else {
+                console.error("bootstrap JS yüklenemedi (bootstrap nesnesi tanımsız).");
+            }
+
             loadCategories();
 
+            // Açıklama alanını ilk odaklanmada temizleme
             $('#descriptionA').on('focus', function () {
-                $(this).val('');
+                if (!$(this).data('touched')) {
+                    $(this).data('touched', true);
+                    $(this).val('');
+                }
             });
 
+            // Kategorileri AJAX ile yükleyen ana fonksiyon
             function loadCategories() {
                 let tableBody = $('#categoryTable');
-                tableBody.empty();
+                tableBody.empty().append('<tr><td colspan="3">Yükleniyor...</td></tr>');
 
+                // 1. Ana Kategorileri (Pcategories) çekme
                 $.ajax({
                     url: "/Pcategories/GetCategoryByIds",
                     type: 'GET',
                     success: function (mainCategories) {
-                        console.log("Ana kategoriler:", mainCategories);
 
+                        // 2. Oluşturulan Kategorileri (CategoryDesc) çekme
                         $.ajax({
                             url: "/Pcategories/GetCreatedCategories",
                             type: 'GET',
                             success: function (descData) {
-                                console.log("Kategori açıklamaları:", descData);
+                                tableBody.empty();
 
-                                if (Array.isArray(mainCategories.data) && descData && Array.isArray(descData.categoriesDesc)) {
-                                    for (let i = 0; i < descData.categoriesDesc.length; i++) {
-                                        let categoryDesc = descData.categoriesDesc[i];
-                                        let category = mainCategories.data.find(c => c.id === categoryDesc.categoryId);
-                                        let categoryName = category ? category.categories : "N/A";
+                                const mainList = Array.isArray(mainCategories.data) ? mainCategories.data : mainCategories;
+                                const descList = descData && Array.isArray(descData.categoriesDesc) ? descData.categoriesDesc : [];
 
-                                        tableBody.append(`
-                                            <tr>
-                                                <td>${categoryName}</td>
-                                                <td>${categoryDesc.categoryDesc}</td>
-                                                <td>
-                                                    <button class="btn btn-danger btn-sm deleteBtn" data-id="${categoryDesc.id}">Delete</button>
-                                                    <button class="btn btn-warning btn-sm editBtn" data-id="${categoryDesc.id}">Edit</button>
-                                                </td>
-                                            </tr>
-                                        `);
-                                    }
-                                } else {
-                                    alert("Veri yapıları beklenen formatta değil.");
+                                if (descList.length === 0) {
+                                    tableBody.append('<tr><td colspan="3">Kayıtlı kategori açıklaması bulunamadı.</td></tr>');
+                                    return;
+                                }
+
+                                for (let i = 0; i < descList.length; i++) {
+                                    let categoryDesc = descList[i];
+
+                                    let category = mainList.find(c => c.id == categoryDesc.categoryId);
+                                    let categoryName = category ? category.categories : "Ana Kategori Bulunamadı";
+
+                                    tableBody.append(`
+                                        <tr>
+                                            <td>${categoryName}</td>
+                                            <td>${categoryDesc.categoryDesc}</td>
+                                            <td>
+                                                <button class="btn btn-warning btn-sm btn-action editBtn" data-id="${categoryDesc.id}">
+                                                    <i class="fa-solid fa-pen-to-square"></i> Düzenle
+                                                </button>
+                                                <button class="btn btn-danger btn-sm btn-action deleteBtn" data-id="${categoryDesc.id}">
+                                                    <i class="fa-solid fa-trash-can"></i> Sil
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `);
                                 }
                             },
                             error: function () {
-                                alert('Açıklamalar (CategoryDesc) yüklenemedi.');
+                                tableBody.empty().append('<tr><td colspan="3" class="text-danger">Kategori açıklamaları yüklenemedi.</td></tr>');
                             }
                         });
                     },
                     error: function () {
-                        alert('Ana kategoriler (CategoryName) yüklenemedi.');
+                        tableBody.empty().append('<tr><td colspan="3" class="text-danger">Ana kategoriler yüklenemedi.</td></tr>');
                     }
                 });
             }
 
+            // SİLME İŞLEMLERİ
             $(document).on('click', '.deleteBtn', function () {
                 selectedId = $(this).data("id");
-                $('#deleteModal').modal("show");
+                if (deleteModal) deleteModal.show();
             });
 
             $('#deleteB').click(function () {
@@ -183,32 +451,49 @@
                     type: 'POST',
                     success: function () {
                         alert('Kategori başarıyla silindi!');
-                        $('#deleteModal').modal('hide');
+                        if (deleteModal) deleteModal.hide();
                         loadCategories();
                     },
-                    error: function () {
-                        alert('Silme sırasında hata oluştu.');
+                    error: function (xhr) {
+                        alert('Silme sırasında hata oluştu: ' + (xhr.responseJSON?.message || 'Bilinmeyen Hata'));
                     }
                 });
             });
 
+            // DÜZENLEME İŞLEMLERİ
             $(document).on('click', '.editBtn', function () {
                 selectedId = $(this).data("id");
-                $('#editModal').modal("show");
 
                 $.ajax({
-                    url: '/Pcategories/GetCategoryByIds',
+                    url: '/Pcategories/GetCategoryDetails/' + selectedId,
                     type: 'GET',
-                    success: function (data) {
-                        let select = $('#categoryE');
-                        select.empty().append('<option disabled selected value="">Select a Category</option>');
+                    success: function (details) {
+                        $('#descriptionE').val(details.categoryDesc || details.CategoryDesc);
 
-                        $.each(data, function (index, item) {
-                            select.append(`<option value="${item.id}">${item.categories}</option>`);
+                        $.ajax({
+                            url: '/Pcategories/GetCategoryByIds',
+                            type: 'GET',
+                            success: function (data) {
+                                let select = $('#categoryE');
+                                select.empty().append('<option disabled selected value="">Ana kategori seçin</option>');
+
+                                const categoriesToUse = Array.isArray(data.data) ? data.data : data;
+                                const categoryIdMatch = details.categoryId || details.CategoryId;
+
+                                $.each(categoriesToUse, function (index, item) {
+                                    const isSelected = item.id == categoryIdMatch;
+                                    select.append(`<option value="${item.id}" ${isSelected ? 'selected' : ''}>${item.categories}</option>`);
+                                });
+
+                                if (editModal) editModal.show();
+                            },
+                            error: function () {
+                                alert('Ana kategoriler yüklenemedi.');
+                            }
                         });
                     },
                     error: function () {
-                        alert('Kategoriler yüklenemedi.');
+                        alert('Kategori detayları yüklenemedi. Controllerda GetCategoryDetails metodu eksik olabilir.');
                     }
                 });
             });
@@ -226,46 +511,37 @@
                     data: datas,
                     success: function () {
                         alert('Kategori başarıyla güncellendi!');
-                        $('#editModal').modal('hide');
+                        if (editModal) editModal.hide();
                         loadCategories();
                     },
-                    error: function () {
-                        alert('Güncelleme sırasında hata oluştu.');
+                    error: function (xhr) {
+                        alert('Güncelleme sırasında hata oluştu: ' + (xhr.responseJSON?.message || 'Bilinmeyen Hata'));
                     }
                 });
             });
-        $('#addModalB').click(function () {
-            $('#addModal').modal('show');
 
-            $.ajax({
-                url: '/Pcategories/GetCategoryByIds',
-                type: 'GET',
-                success: function (response) {
-                    // Konsola gelen veriyi kontrol et
-                    console.log("add - Gelen veri:", response);
+            // EKLEME İŞLEMLERİ
+            $('#addModalB').click(function () {
+                $.ajax({
+                    url: '/Pcategories/GetCategoryByIds',
+                    type: 'GET',
+                    success: function (response) {
+                        let select = $('#categoryA');
+                        select.empty().append('<option disabled selected value="">Ana kategori seçin</option>');
 
-                    let select = $('#categoryA');
-                    select.empty().append('<option disabled selected value="">Select a Category</option>');
+                        const categoriesToUse = Array.isArray(response.data) ? response.data : response;
 
-                    // Verinin beklenen formatta olup olmadığını kontrol et
-                    if (Array.isArray(response.data)) {
-                        $.each(response.data, function (index, item) {
-                            console.log("add - Kategori:", item);
+                        $.each(categoriesToUse, function (index, item) {
                             select.append(`<option value="${item.id}">${item.categories}</option>`);
                         });
-                    } else {
-                        console.log('Veri beklenen formatta değil:', response.data);
-                        alert('Veri yapısı beklenenden farklı.');
-                    }
-                },
-                error: function (xhr, status, error) {
-                    // AJAX isteği başarısız olursa konsola detaylı hata yaz
-                    console.error("AJAX Hatası:", status, error);
-                    alert('Kategoriler yüklenemedi.');
-                }
-            });
-        });
 
+                        if (addModal) addModal.show();
+                    },
+                    error: function () {
+                        alert('Kategoriler yüklenemedi.');
+                    }
+                });
+            });
 
             $('#addB').click(function () {
                 let datas = {
@@ -284,7 +560,9 @@
                     data: datas,
                     success: function (response) {
                         alert(response.message || 'Kategori başarıyla eklendi!');
-                        $('#addModal').modal('hide');
+                        $('#descriptionA').val('');
+                        $('#categoryA').val('');
+                        if (addModal) addModal.hide();
                         loadCategories();
                     },
                     error: function (xhr) {
@@ -295,7 +573,7 @@
         });
     </script>
 
-    <footer class="footer bg-light text-center py-3">
+    <footer class="footer text-center py-3 border-top mt-auto">
         <div class="container">
             <span class="text-muted">&copy; @DateTime.Now.Year - Customer Management System</span>
         </div>

@@ -403,12 +403,19 @@ namespace CustomerManagementSystem.Controllers
 			// 5. JSON Verisini Hazırlama (Para birimi formatında)
 			var result = new
 			{
-				TotalRevenue = totalRevenue.ToString("N2"),
-				TotalOrders = totalOrders.ToString("N0"),
-				AverageBasketAmount = averageBasketAmount.ToString("N2"),
-				TotalProfit = totalProfit.ToString("N2")
-			};
+				// totalRevenue zaten decimal, Math.Truncate ile küsurat atılıp N2 (2 ondalık) formatında gösteriliyor.
+				TotalRevenue = Math.Truncate(totalRevenue).ToString("N2"),
 
+				// totalOrders bir int olduğu için direkt ToString("N0") kullanılır.
+				// Math.Truncate(totalOrders) ifadesi CS1021'e neden oluyordu.
+				TotalOrders = totalOrders.ToString("N0"),
+
+				// averageBasketAmount zaten decimal.
+				AverageBasketAmount = Math.Truncate(averageBasketAmount).ToString("N2"),
+
+				// totalProfit zaten decimal.
+				TotalProfit = Math.Truncate(totalProfit).ToString("N2")
+			};
 			return Json(new { success = true, data = result });
 		}
 	}

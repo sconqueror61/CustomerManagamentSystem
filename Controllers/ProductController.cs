@@ -112,5 +112,28 @@ namespace CustomerManagementSystem.Controllers
 			ViewBag.Message = "Added successfully !";
 			return Json(new { fileUrls });
 		}
+		public JsonResult GetCategoryDescriptions(int categoryId)
+		{
+			if (!UserId.HasValue)
+				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
+
+			// Kullanıcının oluşturduğu ve seçilen CategoryId'ye ait CategoryDesc'leri çek
+			var descriptions = _dbContext.Pcategories
+				.Where(x => x.CategoryId == categoryId && x.CreaterUserId == UserId.Value)
+				.Select(x => new
+				{
+					id = x.Id, // CategoryDesc'in kendi ID'si
+					categoryDesc = x.CategoryDesc // Kategori Açıklaması
+				})
+				.ToList();
+
+			if (descriptions == null || descriptions.Count == 0)
+			{
+				// Kullanıcıya ait açıklama bulunamazsa, boş liste döner.
+				return Json(new { success = true, descriptions = new List<object>() });
+			}
+
+			return Json(new { success = true, descriptions = descriptions });
+		}
 	}
 }

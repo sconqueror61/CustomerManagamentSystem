@@ -1,78 +1,32 @@
 ﻿using CustomerManagementSystem.DB;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CustomerManagementSystem.Controllers
 {
-	[Authorize]
 	public class PcategoriesController : Controller
 	{
-		private readonly CustomerManagementSystemContext _context;
-		private int? UserId
+		private readonly CustomerManagementSystemContext _db;
+
+		public PcategoriesController(CustomerManagementSystemContext db)
 		{
-			get
-			{
-				var userIdClaim = User.FindFirst("UserId")?.Value;
-				if (int.TryParse(userIdClaim, out int userId))
-					return userId;
-				return null;
-			}
+			_db = db;
 		}
 
-		public PcategoriesController(CustomerManagementSystemContext context)
+		// ================== SAYFAYI AÇAN ACTION ==================
+		// Views/Pcategories/Index.cshtml
+		public IActionResult Index()
 		{
-			_context = context;
+			return View();
 		}
 
-		// GET: Pcategories
-		public async Task<IActionResult> Index()
-		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-			return View(await _context.Pcategories.ToListAsync());
-		}
-
-		[HttpGet]
-		public IActionResult GetCreatedCategories()
-		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-
-			var categoryName = _context.PmainCategories
-				.Select(c => new
-				{
-					c.Id,
-					c.Categories
-				})
-				.ToList(); // Bunu ekledik
-
-			var categoriesDesc = _context.Pcategories
-				.OrderBy(c => c.Id)
-				.Select(c => new
-				{
-					c.Id,
-					c.CategoryDesc,
-					c.CategoryId
-				})
-				.ToList();
-
-			return Ok(new
-			{
-				categoryName,
-				categoriesDesc
-			});
-		}
-
+		// ================== ANA KATEGORİLER (PmainCategories) ==================
+		// /Pcategories/GetCategoryByIds
 		[HttpGet]
 		public IActionResult GetCategoryByIds()
 		{
-			if (!UserId.HasValue)
-			{
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-			}
-
-			var categories = _context.PmainCategories
+			// PmainCategories => Id, Categories
+			var categories = _db.PmainCategories
 				.Select(x => new
 				{
 					id = x.Id,
@@ -80,137 +34,118 @@ namespace CustomerManagementSystem.Controllers
 				})
 				.ToList();
 
-			if (!categories.Any())
-			{
-				return Json(new { success = false, message = "Kategori bulunamadı!" });
-			}
-
-			return Json(new { success = true, data = categories });
+			return Json(new { data = categories });
 		}
 
-
-		public IActionResult Create()
+		// ================== OLUŞTURULMUŞ KATEGORİLER (Pcategory) ==================
+		// /Pcategories/GetCreatedCategories
+		[HttpGet]
+		public IActionResult GetCreatedCategories()
 		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-			return View();
+			// Pcategory => Id, CategoryId, CategoryDesc, CreaterUserId
+			var descList = _db.Pcategories
+				.Select(c => new
+				{
+					id = c.Id,
+					categoryId = c.CategoryId,
+					categoryDesc = c.CategoryDesc
+				})
+				.ToList();
+
+			// JS tarafında: descData.categoriesDesc ile okuyorsun
+			return Json(new { categoriesDesc = descList });
 		}
+
+		// /Pcategories/GetCategoryDetails/5
+		[HttpGet]
+		public IActionResult GetCategoryDetails(int id)
+		{
+			var detail = _db.Pcategories
+				.Where(c => c.Id == id)
+				.Select(c => new
+				{
+					id = c.Id,
+					categoryId = c.CategoryId,
+					categoryDesc = c.CategoryDesc
+				})
+				.FirstOrDefault();
+
+			if (detail == null)
+				return NotFound(new { message = "Kategori açıklaması bulunamadı." });
+
+			return Json(detail);
+		}
+
+		// ================== EKLEME ==================
+		// /Pcategories/Create   (POST)
 		[HttpPost]
-		public async Task<IActionResult> Create(string categoryDesc, int categoryid)
+		public IActionResult Create(string CategoryDesc, int CategoryId)
 		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-
-			if (string.IsNullOrWhiteSpace(categoryDesc) || categoryid <= 0)
+			if (string.IsNullOrWhiteSpace(CategoryDesc) || CategoryId == 0)
 			{
-				return BadRequest(new { success = false, message = "Eksik bilgi gönderildi." });
+				return BadRequest(new { message = "Kategori ve açıklama zorunludur." });
 			}
 
-			var pcategory = new Pcategory
+			int? creatorUserId = null;
+			var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (int.TryParse(userIdStr, out var uid))
 			{
-				CategoryDesc = categoryDesc,
-				CategoryId = categoryid,
-				CreaterUserId = UserId.Value
+				creatorUserId = uid;
+			}
+
+			var entity = new Pcategory
+			{
+				CategoryId = CategoryId,
+				CategoryDesc = CategoryDesc,
+				CreaterUserId = creatorUserId
 			};
 
-			_context.Add(pcategory);
-			await _context.SaveChangesAsync();
+			_db.Pcategories.Add(entity);
+			_db.SaveChanges();
 
 			return Json(new { success = true, message = "Kategori başarıyla eklendi." });
 		}
 
-		public async Task<IActionResult> Edit(int? id)
-		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-
-			if (id == null)
-			{
-				return NotFound();
-			}
-
-			var pcategory = await _context.Pcategories.FindAsync(id);
-			if (pcategory == null)
-			{
-				return NotFound();
-			}
-			return View(pcategory);
-		}
-
+		// ================== GÜNCELLEME ==================
+		// /Pcategories/Edit   (POST)
 		[HttpPost]
-		public async Task<IActionResult> Edit(Pcategory pcategory)
+		public IActionResult Edit(int Id, string CategoryDesc, int CategoryId)
 		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-
-			if (pcategory == null || pcategory.Id == 0)
+			var entity = _db.Pcategories.Find(Id);
+			if (entity == null)
 			{
-				return BadRequest();
+				return NotFound(new { message = "Kategori açıklaması bulunamadı." });
 			}
 
-			if (ModelState.IsValid)
+			if (string.IsNullOrWhiteSpace(CategoryDesc) || CategoryId == 0)
 			{
-				try
-				{
-					pcategory.CreaterUserId = UserId.Value;
-					_context.Update(pcategory);
-					await _context.SaveChangesAsync();
-				}
-				catch (DbUpdateConcurrencyException)
-				{
-					if (!PcategoryExists(pcategory.Id))
-					{
-						return NotFound();
-					}
-					else
-					{
-						throw;
-					}
-				}
-				return Ok();
+				return BadRequest(new { message = "Kategori ve açıklama zorunludur." });
 			}
-			return BadRequest(ModelState);
+
+			entity.CategoryDesc = CategoryDesc;
+			entity.CategoryId = CategoryId;
+
+			_db.Pcategories.Update(entity);
+			_db.SaveChanges();
+
+			return Json(new { success = true, message = "Kategori başarıyla güncellendi." });
 		}
 
-		public async Task<IActionResult> Delete(int? id)
+		// ================== SİLME ==================
+		// /Pcategories/Delete/5   (POST)
+		[HttpPost]
+		public IActionResult Delete(int id)
 		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-
-			if (id == null)
+			var entity = _db.Pcategories.Find(id);
+			if (entity == null)
 			{
-				return NotFound();
+				return NotFound(new { message = "Silinecek kayıt bulunamadı." });
 			}
 
-			var pcategory = await _context.Pcategories
-				.Where(p => p.CreaterUserId == UserId)
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (pcategory == null)
-			{
-				return NotFound();
-			}
+			_db.Pcategories.Remove(entity);
+			_db.SaveChanges();
 
-			return View(pcategory);
-		}
-
-		[HttpPost, ActionName("Delete")]
-		public async Task<IActionResult> DeleteConfirmed(int id)
-		{
-			if (!UserId.HasValue)
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu." });
-			var pcategory = await _context.Pcategories.FindAsync(id);
-			if (pcategory != null)
-			{
-				_context.Pcategories.Remove(pcategory);
-			}
-
-			await _context.SaveChangesAsync();
-			return RedirectToAction(nameof(Index));
-		}
-
-		private bool PcategoryExists(int id)
-		{
-			return _context.Pcategories.Any(e => e.Id == id);
+			return Json(new { success = true, message = "Kategori başarıyla silindi." });
 		}
 	}
 }

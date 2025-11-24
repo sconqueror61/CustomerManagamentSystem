@@ -18,7 +18,7 @@
 
         .right-preview-container {
             padding: 10px;
-            color:dodgerblue;
+            color: dodgerblue;
         }
 
         .carousel-control-prev,
@@ -32,14 +32,13 @@
             margin: 0 auto;
             display: block;
             border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
     <div class="container mt-4">
         <div class="row">
-            <!-- Form Alanı -->
             <div class="col-md-8">
                 <div class="card p-4 shadow-sm">
 
@@ -54,15 +53,17 @@
                     </div>
 
                     <div class="form-group mb-3">
-                        <label for="categorySelect">Category</label>
+                        <label for="categorySelect">Category (Ana Kategori)</label>
                         <select class="form-control" id="categorySelect">
                             <option disabled selected value="">Select a Category</option>
                         </select>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label for="description">Description</label>
-                        <input type="text" id="description" class="form-control" placeholder="Description" />
+                        <label for="descriptionSelect">Description (Kategori Açıklaması)</label>
+                        <select class="form-control" id="descriptionSelect" disabled>
+                            <option disabled selected value="">Önce Ana Kategori Seçiniz</option>
+                        </select>
                     </div>
 
                     <div class="form-check mb-3">
@@ -103,13 +104,11 @@
                 </div>
             </div>
 
-            <!-- Önizleme Alanı -->
             <div class="col-md-4">
                 <div class="card p-3 shadow-sm">
                     <h6 class="mb-3">Uploaded Images</h6>
                     <div id="carouselExampleFade" class="carousel slide carousel-fade" data-bs-ride="carousel" style="max-width: 100%; border: 1px solid #ccc; border-radius: 10px;">
                         <div id="uploadedImages" class="carousel-inner">
-                            <!-- JavaScript ile resimler buraya eklenecek -->
                         </div>
                         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -138,62 +137,103 @@
                 }
             });
 
-        $.ajax({
-            url: '/Pcategories/GetCategoryByIds',
-            type: 'GET',
-            success: function (data) {
-                console.log("Gelen data:", data);
+            // Ana Kategorileri Yükleme (Orijinal Kod)
+            $.ajax({
+                url: '/Pcategories/GetCategoryByIds',
+                type: 'GET',
+                success: function (data) {
+                    console.log("Gelen data:", data);
 
-                let select = $('#categorySelect');
-                select.empty().append('<option disabled selected value="">Select a Category</option>');
+                    let select = $('#categorySelect');
+                    select.empty().append('<option disabled selected value="">Select a Category</option>');
 
-                // Her bir kategoriyi select listesine ekle
-                $.each(data.data, function (index, item) {
-                    console.log("Item:", item);
-                    select.append(`<option value="${item.id}">${item.categories}</option>`);
-                });
-            },
-            error: function () {
-                alert('Kategoriler yüklenemedi.');
-            }
-        });
+                    // Her bir kategoriyi select listesine ekle
+                    const categories = data.data || data;
+                    $.each(categories, function (index, item) {
+                        console.log("Item:", item);
+                        select.append(`<option value="${item.id}">${item.categories}</option>`);
+                    });
+                },
+                error: function () {
+                    alert('Kategoriler yüklenemedi.');
+                }
+            });
 
-        $("#Up_document").on('change', function () {
-            var image_holder = $('#uploadedImages');
-            image_holder.empty();
+            // Yeni Fonksiyon: Kategori seçimi değiştiğinde Açıklamaları Yükle
+            $('#categorySelect').on('change', function () {
+                const categoryId = $(this).val();
+                const descriptionSelect = $('#descriptionSelect');
 
-            var files = $(this)[0].files;
+                descriptionSelect.empty().prop('disabled', true).append('<option disabled selected value="">Açıklamalar Yükleniyor...</option>');
 
-            if (typeof (FileReader) !== "undefined") {
-                if (files.length > 0) {
-                    // Okları göster
-                    $(".carousel-control-prev, .carousel-control-next").show();
+                if (categoryId) {
+                    descriptionSelect.prop('disabled', false);
 
-                    for (let i = 0; i < files.length; i++) {
-                        let file = files[i];
-                        let reader = new FileReader();
+                    $.ajax({
+                        url: '/Product/GetCategoryDescriptions', // Yeni Controller metodu
+                        type: 'GET',
+                        data: { categoryId: categoryId },
+                        success: function (response) {
+                            descriptionSelect.empty().append('<option disabled selected value="">Açıklama Seçiniz</option>');
 
-                        reader.onload = function (e) {
-                            const isActive = i === 0 ? 'active' : '';
-                            const $carouselItem = $(`
-                                <div class="carousel-item ${isActive}">
-                                    <img src="${e.target.result}" class="d-block w-100 rounded" alt="...">
-                                </div>
-                            `);
-                            image_holder.append($carouselItem);
-                        };
-                        reader.readAsDataURL(file);
+                            if (response.success && response.descriptions && response.descriptions.length > 0) {
+                                $.each(response.descriptions, function (index, item) {
+                                    // Option Value olarak Pcategory'nin ID'si (CategoryDesc ID) kullanılacak
+                                    descriptionSelect.append(`<option value="${item.id}">${item.categoryDesc}</option>`);
+                                });
+                            } else {
+                                descriptionSelect.append('<option disabled>Bu kategoriye ait açıklama bulunamadı.</option>');
+                                descriptionSelect.prop('disabled', true);
+                            }
+                        },
+                        error: function () {
+                            descriptionSelect.empty().append('<option disabled>Açıklamalar yüklenirken hata oluştu.</option>');
+                            descriptionSelect.prop('disabled', true);
+                        }
+                    });
+                } else {
+                    descriptionSelect.prop('disabled', true).empty().append('<option disabled selected value="">Önce Ana Kategori Seçiniz</option>');
+                }
+            });
+
+
+            $("#Up_document").on('change', function () {
+                var image_holder = $('#uploadedImages');
+                image_holder.empty();
+
+                var files = $(this)[0].files;
+
+                if (typeof (FileReader) !== "undefined") {
+                    if (files.length > 0) {
+                        // Okları göster
+                        $(".carousel-control-prev, .carousel-control-next").show();
+
+                        for (let i = 0; i < files.length; i++) {
+                            let file = files[i];
+                            let reader = new FileReader();
+
+                            reader.onload = function (e) {
+                                const isActive = i === 0 ? 'active' : '';
+                                const $carouselItem = $(`
+                                    <div class="carousel-item ${isActive}">
+                                        <img src="${e.target.result}" class="d-block w-100 rounded" alt="...">
+                                    </div>
+                                `);
+                                image_holder.append($carouselItem);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    } else {
+                        // Dosya yoksa okları gizle
+                        $(".carousel-control-prev, .carousel-control-next").hide();
                     }
                 } else {
-                    // Dosya yoksa okları gizle
-                    $(".carousel-control-prev, .carousel-control-next").hide();
+                    alert("Tarayıcınız FileReader'ı desteklemiyor.");
                 }
-            } else {
-                alert("Tarayıcınız FileReader'ı desteklemiyor.");
-            }
-        });
+            });
 
 
+            // addCard Click Handler'ı güncellendi
             $("#addCard").on("click", function () {
                 var formData = new FormData();
                 var files = $("#Up_document")[0].files;
@@ -201,13 +241,30 @@
                     alert("Lütfen en az bir dosya seçin.");
                     return;
                 }
+
+                // Seçim kontrolleri
+                var categoryId = $("#categorySelect").val();
+                var categoryDescId = $("#descriptionSelect").val();
+
+                if (!categoryId) {
+                    alert("Lütfen bir Ana Kategori seçin.");
+                    return;
+                }
+                if (!categoryDescId) {
+                    alert("Lütfen bir Kategori Açıklaması seçin.");
+                    return;
+                }
+
+
                 for (var i = 0; i < files.length; i++) {
                     formData.append("formFiles", files[i]);
                 }
+
+                // Product datasına descriptionSelect'ten gelen ID'yi atıyoruz
                 var datas = {
                     explanation: $("#explanation").val(),
-                    description: $("#description").val(),
-                    categoryId: $("#categorySelect").val(),
+                    // description alanı artık CategoryDesc'in ID'si olacak
+                    description: categoryDescId,
                     breakibility: $("#breakibility").prop("checked"),
                     price: $("#price").val(),
                     stock: $("#stock").val(),
@@ -218,15 +275,19 @@
 
                 console.log(datas);
 
+                // 1. Ürün Ekleme AJAX
                 $.ajax({
                     url: "/Product/AddProduct",
                     type: "POST",
                     data: {
                         product: datas,
-                        categoryid: $('#categorySelect').val()
+                        // categoryid parametresine Ana Kategori ID'sini gönderiyoruz
+                        categoryid: categoryId
                     },
                     success: function (response) {
-                        if (response.id) {
+                        if (response.success && response.id) {
+
+                            // 2. Resim Yükleme AJAX
                             formData.append("productId", response.id);
                             $.ajax({
                                 url: "/Product/Create",
@@ -237,21 +298,34 @@
                                 success: function (uploadResponse) {
                                     const imageContainer = $('#uploadedImages');
                                     imageContainer.empty();
-                                    for (let i = 0; i < Math.min(files.length, 3); i++) {
-                                        const reader = new FileReader();
-                                        reader.onload = function (e) {
-                                            imageContainer.append(`<img src="${e.target.result}" class="image-preview" />`);
-                                        };
-                                        reader.readAsDataURL(files[i]);
+
+                                    // Başarılı yüklemeden sonra resim önizlemesi (Orijinal kodunuzda bu kısım hatalıydı, düzeltildi)
+                                    // Sunucudan gelen fileUrls listesini kullanarak gösterebiliriz:
+                                    if (uploadResponse.fileUrls && uploadResponse.fileUrls.length > 0) {
+                                        // Tüm resimleri carousel'e yeniden yükleme
+                                        let image_holder = $('#uploadedImages').empty();
+                                        $(".carousel-control-prev, .carousel-control-next").show();
+                                        $.each(uploadResponse.fileUrls, function(index, url) {
+                                            const isActive = index === 0 ? 'active' : '';
+                                            const $carouselItem = $(`
+                                                <div class="carousel-item ${isActive}">
+                                                    <img src="${url}" class="d-block w-100 rounded" alt="...">
+                                                </div>
+                                            `);
+                                            image_holder.append($carouselItem);
+                                        });
+                                    } else {
+                                         $(".carousel-control-prev, .carousel-control-next").hide();
                                     }
-                                    alert("Dosya başarıyla yüklendi.");
+
+                                    alert("Ürün ve Dosyalar başarıyla yüklendi!");
                                 },
                                 error: function (xhr) {
-                                    alert("Dosya yükleme sırasında hata oluştu: " + xhr.statusText);
+                                    alert("Ürün başarıyla eklendi ancak dosya yükleme sırasında hata oluştu: " + xhr.statusText);
                                 }
                             });
                         } else {
-                            alert("Ürün ID alınırken bir hata oluştu.");
+                            alert("Ürün eklenirken bir hata oluştu: " + response.message);
                         }
                     },
                     error: function (xhr) {
