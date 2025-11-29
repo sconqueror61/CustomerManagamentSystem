@@ -13,19 +13,14 @@ namespace CustomerManagementSystem.Controllers
 			_db = db;
 		}
 
-		// ================== SAYFAYI AÇAN ACTION ==================
-		// Views/Pcategories/Index.cshtml
 		public IActionResult Index()
 		{
 			return View();
 		}
 
-		// ================== ANA KATEGORİLER (PmainCategories) ==================
-		// /Pcategories/GetCategoryByIds
 		[HttpGet]
 		public IActionResult GetCategoryByIds()
 		{
-			// PmainCategories => Id, Categories
 			var categories = _db.PmainCategories
 				.Select(x => new
 				{
