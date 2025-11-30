@@ -32,8 +32,6 @@ namespace CustomerManagementSystem.Controllers
 			return Json(new { data = categories });
 		}
 
-		// ================== OLUŞTURULMUŞ KATEGORİLER (Pcategory) ==================
-		// /Pcategories/GetCreatedCategories
 		[HttpGet]
 		public IActionResult GetCreatedCategories()
 		{
