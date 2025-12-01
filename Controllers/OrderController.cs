@@ -1,6 +1,7 @@
 ﻿using CustomerManagementSystem.DB;
 using CustomerManagementSystem.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace CustomerManagementSystem.Controllers
 {
@@ -256,15 +257,26 @@ namespace CustomerManagementSystem.Controllers
 
 		public IActionResult Index()
 		{
-			if (!UserId.HasValue)
+			// Kullanıcı ID'sini claim'den al
+			var userIdStr = User.FindFirst("UserId")?.Value
+				 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			// Kullanıcı giriş yapmamışsa login'e yönlendir
+			if (!int.TryParse(userIdStr, out var userId))
 			{
-				return Json(new { success = false, message = "Geçersiz kullanıcı oturumu" });
+				return RedirectToAction("Login", "Access");
 			}
-			var orders = _context.Orders;
-			var ordersDetails = _context.OrdersDetails;
-			ViewBag.Orders = orders;
-			ViewBag.OrdersDetails = ordersDetails;
+
+			// ViewBag’e userId koy
+			ViewBag.UserId = userId;
+
+			// Sipariş verilerini View'e gönder
+			ViewBag.Orders = _context.Orders.ToList();
+			ViewBag.OrdersDetails = _context.OrdersDetails.ToList();
+
 			return View();
 		}
+
 	}
 }
+

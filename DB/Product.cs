@@ -26,4 +26,8 @@ public partial class Product
     public int? CreaterUserId { get; set; }
 
     public double? Cost { get; set; }
+
+    public virtual User? CreaterUser { get; set; }
+
+    public virtual ICollection<UserBasket> UserBaskets { get; set; } = new List<UserBasket>();
 }

@@ -16,4 +16,8 @@ public partial class Session
     public string? Culture { get; set; }
 
     public string? Ipadress { get; set; }
+
+    public virtual User Customer { get; set; } = null!;
+
+    public virtual ICollection<SessionDetail> SessionDetails { get; set; } = new List<SessionDetail>();
 }

@@ -20,4 +20,14 @@ public partial class User
     public string Adress { get; set; } = null!;
 
     public string? Country { get; set; }
+
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+
+    public virtual ICollection<Service> Services { get; set; } = new List<Service>();
+
+    public virtual ICollection<Session> Sessions { get; set; } = new List<Session>();
+
+    public virtual ICollection<UserBasket> UserBaskets { get; set; } = new List<UserBasket>();
+
+    public virtual UserType UserType { get; set; } = null!;
 }

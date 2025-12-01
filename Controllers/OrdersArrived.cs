@@ -1,6 +1,7 @@
 ﻿using CustomerManagementSystem.DB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CustomerManagementSystem.Controllers
 {
@@ -172,8 +173,22 @@ namespace CustomerManagementSystem.Controllers
 
 		public IActionResult Index()
 		{
+			// Kullanıcı ID'sini claim'den al
+			var userIdStr = User.FindFirst("UserId")?.Value
+				 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			// Kullanıcı giriş yapmamışsa -> direkt engelle
+			if (!int.TryParse(userIdStr, out var userId))
+			{
+				return RedirectToAction("Login", "Access");
+			}
+
+			// Kullanıcı giriş yapmış -> sayfayı aç
+			ViewBag.UserId = userId;
 			return View();
 		}
+
+
 
 		// TAMAMLANMIŞ / SİLİNMİŞ SİPARİŞLER
 		[HttpGet]
@@ -257,6 +272,14 @@ namespace CustomerManagementSystem.Controllers
 
 		public IActionResult CompletedOrdersIndex()
 		{
+			var userIdStr = User.FindFirst("UserId")?.Value
+			 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			// Kullanıcı giriş yapmamışsa -> direkt engelle
+			if (!int.TryParse(userIdStr, out var userId))
+			{
+				return RedirectToAction("Login", "Access");
+			}
 			return View();
 		}
 	}

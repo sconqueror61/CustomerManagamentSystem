@@ -31,6 +31,15 @@ namespace CustomerManagementSystem.Controllers
 
 		public IActionResult Index()
 		{
+			var userIdStr = User.FindFirst("UserId")?.Value
+				 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			if (!int.TryParse(userIdStr, out var userId))
+			{
+				return RedirectToAction("Login", "Access");
+			}
+
+			ViewBag.UserId = userId;
 			return View();
 		}
 

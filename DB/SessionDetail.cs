@@ -12,4 +12,6 @@ public partial class SessionDetail
     public string Path { get; set; } = null!;
 
     public int? SessionId { get; set; }
+
+    public virtual Session? Session { get; set; }
 }

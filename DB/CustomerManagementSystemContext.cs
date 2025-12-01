@@ -136,6 +136,10 @@ public partial class CustomerManagementSystemContext : DbContext
             entity.Property(e => e.Price).HasColumnName("price");
             entity.Property(e => e.Stock).HasColumnName("stock");
             entity.Property(e => e.Width).HasColumnName("width");
+
+            entity.HasOne(d => d.CreaterUser).WithMany(p => p.Products)
+                .HasForeignKey(d => d.CreaterUserId)
+                .HasConstraintName("FK_Products_Users");
         });
 
         modelBuilder.Entity<Service>(entity =>
@@ -143,6 +147,10 @@ public partial class CustomerManagementSystemContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.CreaterUserId).HasColumnName("createrUserID");
             entity.Property(e => e.Description).HasMaxLength(50);
+
+            entity.HasOne(d => d.CreaterUser).WithMany(p => p.Services)
+                .HasForeignKey(d => d.CreaterUserId)
+                .HasConstraintName("FK_Services_Users");
         });
 
         modelBuilder.Entity<Session>(entity =>
@@ -155,6 +163,11 @@ public partial class CustomerManagementSystemContext : DbContext
             entity.Property(e => e.Ipadress)
                 .HasMaxLength(10)
                 .HasColumnName("IPadress");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.Sessions)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Session_Users");
         });
 
         modelBuilder.Entity<SessionDetail>(entity =>
@@ -163,6 +176,10 @@ public partial class CustomerManagementSystemContext : DbContext
 
             entity.Property(e => e.Action).HasMaxLength(50);
             entity.Property(e => e.Path).HasMaxLength(100);
+
+            entity.HasOne(d => d.Session).WithMany(p => p.SessionDetails)
+                .HasForeignKey(d => d.SessionId)
+                .HasConstraintName("FK_SessionDetail_Session");
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -178,6 +195,11 @@ public partial class CustomerManagementSystemContext : DbContext
                 .HasColumnName("password");
             entity.Property(e => e.SurName).HasMaxLength(50);
             entity.Property(e => e.UserTypeId).HasColumnName("userTypeId");
+
+            entity.HasOne(d => d.UserType).WithMany(p => p.Users)
+                .HasForeignKey(d => d.UserTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Users_UserTypes");
         });
 
         modelBuilder.Entity<UserBasket>(entity =>
@@ -185,6 +207,15 @@ public partial class CustomerManagementSystemContext : DbContext
             entity.ToTable("UserBasket");
 
             entity.Property(e => e.RecordDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.UserBaskets)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK_UserBasket_Products");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserBaskets)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserBasket_Users");
         });
 
         modelBuilder.Entity<UserType>(entity =>
