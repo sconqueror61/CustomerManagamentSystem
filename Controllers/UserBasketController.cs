@@ -42,7 +42,7 @@ namespace CustomerManagementSystem.Controllers
 			ViewBag.UserId = userId;
 			return View();
 		}
-
+		//
 		[HttpGet]
 		public IActionResult GetUserBasketProducts()
 		{
