@@ -329,7 +329,7 @@ namespace CustomerManagementSystem.Controllers
 			var dataPoints = timelineLabels.Length;
 
 			return Json(new
-			{
+			{//
 				success = true,
 				totalSessions,
 				// Metriklerin ham yüzdeleri
