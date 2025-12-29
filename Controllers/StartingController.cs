@@ -349,7 +349,6 @@ namespace CustomerManagementSystem.Controllers
 		[HttpGet]
 		public JsonResult GetAllInformationsAboutProfits()
 		{
-			// 1. Kullanıcı Tipi Kontrolü
 			var userType = User.FindFirst("UserTypeId")?.Value;
 			if (userType != "1")
 			{
